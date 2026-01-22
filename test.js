@@ -54,67 +54,67 @@ console.log('── 翻訳テスト ──────────────�
 test('毎日正午', function() {
   var result = QuartzCronJP.translate('0 0 12 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日12時00分に実行');
+  assertEquals(result.description, '毎日午後12時00分');
 });
 
 test('平日9:30', function() {
   var result = QuartzCronJP.translate('0 30 9 ? * MON-FRI');
   assertTrue(result.success);
-  assertEquals(result.description, '毎週平日（月〜金） 9時30分に実行');
+  assertEquals(result.description, '毎週平日（月〜金） 午前9時30分');
 });
 
 test('15分ごと', function() {
   var result = QuartzCronJP.translate('0 0/15 * * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '15分ごと');
+  assertEquals(result.description, '毎時0分起点で15分間隔');
 });
 
 test('10分から20分間隔', function() {
   var result = QuartzCronJP.translate('0 10/20 * * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎時10分から20分間隔');
+  assertEquals(result.description, '毎時10分起点で20分間隔');
 });
 
 test('毎月第1月曜', function() {
   var result = QuartzCronJP.translate('0 0 10 ? * 2#1');
   assertTrue(result.success);
-  assertEquals(result.description, '毎月第1月曜日 10時00分に実行');
+  assertEquals(result.description, '毎月第1月曜日 午前10時00分');
 });
 
 test('毎月最終日曜', function() {
   var result = QuartzCronJP.translate('0 30 9 ? * 1L');
   assertTrue(result.success);
-  assertEquals(result.description, '毎月最終日曜日 9時30分に実行');
+  assertEquals(result.description, '毎月最終日曜日 午前9時30分');
 });
 
 test('毎月末', function() {
   var result = QuartzCronJP.translate('0 0 18 L * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎月末日 18時00分に実行');
+  assertEquals(result.description, '毎月末日 午後6時00分');
 });
 
 test('15日最寄り平日', function() {
   var result = QuartzCronJP.translate('0 0 9 15W * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎月15日に最も近い平日 9時00分に実行');
+  assertEquals(result.description, '毎月15日に最も近い平日 午前9時00分');
 });
 
 test('時間リスト', function() {
   var result = QuartzCronJP.translate('0 30 8,12,18 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日8・12・18時30分に実行');
+  assertEquals(result.description, '毎日午前8・午後12・午後6時30分');
 });
 
 test('年指定', function() {
   var result = QuartzCronJP.translate('0 0 0 1 1 ? 2025');
   assertTrue(result.success);
-  assertEquals(result.description, '2025年1月1日 0時00分に実行');
+  assertEquals(result.description, '2025年1月1日 午前0時00分');
 });
 
 test('秒間隔+時刻', function() {
   var result = QuartzCronJP.translate('0/1 0 2 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日2時00分に毎秒');
+  assertEquals(result.description, '毎日午前2時00分に毎秒');
 });
 
 // ============================================================

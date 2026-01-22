@@ -48,6 +48,49 @@
     return MONTH_NAMES[month.toUpperCase()] || MONTH_NAMES[month] || (month + '月');
   }
 
+  /**
+   * 24時間表記を12時間表記（午前/午後）に変換
+   * @param {number|string} hour - 時（0-23）
+   * @returns {string} 12時間表記の時刻
+   */
+  function formatHour12(hour) {
+    var h = parseInt(hour, 10);
+    if (h === 0) return '午前0時';
+    if (h < 12) return '午前' + h + '時';
+    if (h === 12) return '午後12時';
+    return '午後' + (h - 12) + '時';
+  }
+
+  /**
+   * 時分を12時間表記でフォーマット
+   * @param {number|string} hour - 時（0-23）
+   * @param {number|string} minute - 分（0-59）
+   * @returns {string} 12時間表記の時刻
+   */
+  function formatTime12(hour, minute) {
+    var h = parseInt(hour, 10);
+    var m = String(minute).padStart(2, '0');
+    var period = h < 12 ? '午前' : '午後';
+    var h12 = h === 0 ? 0 : (h <= 12 ? h : h - 12);
+    return period + h12 + '時' + m + '分';
+  }
+
+  /**
+   * 時分秒を12時間表記でフォーマット
+   * @param {number|string} hour - 時（0-23）
+   * @param {number|string} minute - 分（0-59）
+   * @param {number|string} second - 秒（0-59）
+   * @returns {string} 12時間表記の時刻
+   */
+  function formatTimeWithSec12(hour, minute, second) {
+    var h = parseInt(hour, 10);
+    var m = String(minute).padStart(2, '0');
+    var s = String(second);
+    var period = h < 12 ? '午前' : '午後';
+    var h12 = h === 0 ? 0 : (h <= 12 ? h : h - 12);
+    return period + h12 + '時' + m + '分' + s + '秒';
+  }
+
   function getFieldUnit(fieldType) {
     var units = {
       second: '秒',
@@ -249,7 +292,7 @@
         }
         if (!hour.isAll) {
           h = parsed.hour.value || '0';
-          return h + '時台に' + minute.text + '、' + second.text;
+          return formatHour12(h) + '台に' + minute.text + '、' + second.text;
         }
         return minute.text + '、' + second.text;
       }
@@ -264,11 +307,11 @@
       if (!hour.isAll && !minute.isAll) {
         h = parsed.hour.value || '0';
         m = (parsed.minute.value || '0').toString().padStart(2, '0');
-        return h + '時' + m + '分に' + second.text;
+        return formatTime12(h, m) + 'に' + second.text;
       }
       if (!hour.isAll && minute.isAll) {
         h = parsed.hour.value || '0';
-        return h + '時台に' + second.text;
+        return formatHour12(h) + '台に' + second.text;
       }
       return second.text;
     }
@@ -280,21 +323,29 @@
       var minInterval = parsed.minute.interval;
       // 秒が0でない場合は秒も起点に含める
       s = parsed.second.value || '0';
-      var minStartText;
-      if (s !== '0' && parsed.second.type === 'single') {
-        minStartText = minStart + '分' + s + '秒起点で' + minInterval + '分間隔';
-      } else {
-        minStartText = minStart + '分起点で' + minInterval + '分間隔';
-      }
       
       if (hour.isAll) {
-        return '毎時' + minStartText;
+        // 毎時の場合
+        if (s !== '0' && parsed.second.type === 'single') {
+          return '毎時' + minStart + '分' + s + '秒起点で' + minInterval + '分間隔';
+        }
+        return '毎時' + minStart + '分起点で' + minInterval + '分間隔';
       }
       if (parsed.hour.type === 'range') {
-        return parsed.hour.from + '〜' + parsed.hour.to + '時の間、毎時' + minStartText;
+        // 時間範囲の場合（例: 9-17時の間）
+        var fromH = formatHour12(parsed.hour.from);
+        var toH = formatHour12(parsed.hour.to);
+        if (s !== '0' && parsed.second.type === 'single') {
+          return fromH + '〜' + toH + 'の間、毎時' + minStart + '分' + s + '秒起点で' + minInterval + '分間隔';
+        }
+        return fromH + '〜' + toH + 'の間、毎時' + minStart + '分起点で' + minInterval + '分間隔';
       }
+      // 時が単一値の場合（例: 3時）→ 時分を組み合わせた起点表現
       h = parsed.hour.value || '0';
-      return h + '時台に毎時' + minStartText;
+      if (s !== '0' && parsed.second.type === 'single') {
+        return formatTimeWithSec12(h, minStart, s) + '起点で' + minInterval + '分間隔';
+      }
+      return formatTime12(h, minStart) + '起点で' + minInterval + '分間隔';
     }
     
     // 時の間隔パターン
@@ -304,9 +355,9 @@
         if (hour.isEveryHour) {
           return '毎時' + m + '分';
         }
-        // 時の起点と分を組み合わせて表現（例: 0時30分起点で2時間間隔）
+        // 時の起点と分を組み合わせて表現（例: 午前0時30分起点で2時間間隔）
         var hourStart = parsed.hour.start === '*' ? '0' : parsed.hour.start;
-        return hourStart + '時' + m + '分起点で' + parsed.hour.interval + '時間間隔';
+        return formatTime12(hourStart, m) + '起点で' + parsed.hour.interval + '時間間隔';
       }
       return hour.text;
     }
@@ -330,23 +381,27 @@
     // 時間がリストの場合
     if (parsed.hour.type === 'list') {
       hours = parsed.hour.items.map(function(item) {
-        if (item.type === 'range') return item.from + '〜' + item.to;
-        return item.value;
-      }).join('・');
-      return hours + '時' + m + '分';
+        if (item.type === 'range') {
+          return formatHour12(item.from) + '〜' + formatHour12(item.to);
+        }
+        return formatHour12(item.value).replace('時', '');
+      }).join('・') + '時';
+      return hours + m + '分';
     }
     
     if (parsed.hour.type === 'range') {
-      return parsed.hour.from + '時〜' + parsed.hour.to + '時の間、毎時' + m + '分';
+      var rangeFrom = formatHour12(parsed.hour.from);
+      var rangeTo = formatHour12(parsed.hour.to);
+      return rangeFrom + '〜' + rangeTo + 'の間、毎時' + m + '分';
     }
     
     h = parsed.hour.value || parsed.hour.from || '0';
     
     if (s !== '0' && parsed.second.type === 'single') {
-      return h + '時' + m + '分' + s + '秒';
+      return formatTimeWithSec12(h, m, s);
     }
     
-    return h + '時' + m + '分';
+    return formatTime12(h, m);
   }
 
   function buildDescription(translated, parsed) {
