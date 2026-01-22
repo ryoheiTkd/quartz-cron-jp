@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quartz Cron 日本語翻訳ツール</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%);
+      min-height: 100vh;
+      padding: 2rem;
+      color: #e2e8f0;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      color: #f8fafc;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 2rem;
+    }
+    
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card-title {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .input-wrapper {
+      position: relative;
+    }
+    
+    #cronInput {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-size: 1.25rem;
+      font-family: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Monaco, monospace;
+      color: #f8fafc;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    #cronInput:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    
+    #cronInput::placeholder {
+      color: #475569;
+    }
+    
+    /* 結果表示 */
+    .result {
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+    
+    .result.success {
+      color: #4ade80;
+    }
+    
+    .result.error {
+      color: #f87171;
+    }
+    
+    .error-list {
+      list-style: none;
+      margin-top: 0.75rem;
+    }
+    
+    .error-list li {
+      font-size: 0.875rem;
+      color: #fca5a5;
+      padding: 0.25rem 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    
+    .error-list li::before {
+      content: '•';
+      color: #ef4444;
+    }
+    
+    /* フィールド詳細 */
+    .fields-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+    }
+    
+    .field-item {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 0.75rem;
+      text-align: center;
+    }
+    
+    .field-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-bottom: 0.25rem;
+    }
+    
+    .field-raw {
+      font-family: monospace;
+      font-size: 1rem;
+      color: #60a5fa;
+      margin-bottom: 0.25rem;
+    }
+    
+    .field-translated {
+      font-size: 0.875rem;
+      color: #a5b4fc;
+    }
+    
+    /* サンプル */
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 0.5rem;
+    }
+    
+    .example-btn {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+      color: inherit;
+    }
+    
+    .example-btn:hover {
+      background: #1e293b;
+      border-color: #3b82f6;
+    }
+    
+    .example-cron {
+      font-family: monospace;
+      font-size: 0.875rem;
+      color: #60a5fa;
+    }
+    
+    .example-desc {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 0.25rem;
+    }
+    
+    /* リファレンス */
+    .reference-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .reference-table th,
+    .reference-table td {
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+    }
+    
+    .reference-table th {
+      color: #94a3b8;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    
+    .reference-table td {
+      font-size: 0.875rem;
+    }
+    
+    .reference-table code {
+      background: #0f172a;
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      font-family: monospace;
+      color: #60a5fa;
+    }
+    
+    /* フッター */
+    .footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+    
+    .footer a {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    
+    /* レスポンシブ */
+    @media (max-width: 640px) {
+      body {
+        padding: 1rem;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      .result {
+        font-size: 1.25rem;
+      }
+      
+      .fields-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🕐 Quartz Cron 日本語翻訳ツール</h1>
+    <p class="subtitle">Quartz形式のCron式を入力すると、日本語で説明します</p>
+    
+    <!-- 入力エリア -->
+    <div class="card">
+      <div class="card-title">Cron式を入力（秒 分 時 日 月 曜日 [年]）</div>
+      <div class="input-wrapper">
+        <input 
+          type="text" 
+          id="cronInput" 
+          value="0 30 9 ? * MON-FRI"
+          placeholder="0 0 12 * * ?"
+          autocomplete="off"
+          spellcheck="false"
+        >
+      </div>
+    </div>
+    
+    <!-- 結果表示 -->
+    <div class="card">
+      <div class="card-title">翻訳結果</div>
+      <div id="result" class="result"></div>
+      <ul id="errorList" class="error-list" style="display: none;"></ul>
+    </div>
+    
+    <!-- フィールド詳細 -->
+    <div class="card" id="fieldsCard" style="display: none;">
+      <div class="card-title">フィールド詳細</div>
+      <div id="fieldsGrid" class="fields-grid"></div>
+    </div>
+    
+    <!-- サンプル -->
+    <div class="card">
+      <div class="card-title">サンプル（クリックで入力）</div>
+      <div id="examples" class="examples-grid"></div>
+    </div>
+    
+    <!-- クイックリファレンス -->
+    <div class="card">
+      <div class="card-title">クイックリファレンス</div>
+      <table class="reference-table">
+        <thead>
+          <tr>
+            <th>記号</th>
+            <th>意味</th>
+            <th>例</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>*</code></td>
+            <td>すべての値</td>
+            <td>毎秒、毎分、毎時など</td>
+          </tr>
+          <tr>
+            <td><code>?</code></td>
+            <td>値を指定しない</td>
+            <td>日または曜日で使用</td>
+          </tr>
+          <tr>
+            <td><code>-</code></td>
+            <td>範囲</td>
+            <td><code>MON-FRI</code> → 月〜金曜日</td>
+          </tr>
+          <tr>
+            <td><code>,</code></td>
+            <td>複数の値</td>
+            <td><code>1,15</code> → 1日と15日</td>
+          </tr>
+          <tr>
+            <td><code>/</code></td>
+            <td>間隔</td>
+            <td><code>0/15</code> → 15分ごと</td>
+          </tr>
+          <tr>
+            <td><code>L</code></td>
+            <td>最終</td>
+            <td><code>L</code> → 月末、<code>1L</code> → 最終日曜</td>
+          </tr>
+          <tr>
+            <td><code>W</code></td>
+            <td>最も近い平日</td>
+            <td><code>15W</code> → 15日に最も近い平日</td>
+          </tr>
+          <tr>
+            <td><code>#</code></td>
+            <td>第n曜日</td>
+            <td><code>2#1</code> → 第1月曜日</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="footer">
+      <p>Powered by <a href="#">QuartzCronJP</a> v<span id="version"></span></p>
+    </div>
+  </div>
+  
+  <!-- ライブラリ読み込み -->
+  <script src="quartz-cron-jp.js"></script>
+  
+  <script>
+    // サンプルデータ
+    var EXAMPLES = [
+      { cron: '0 0 12 * * ?', desc: '毎日正午' },
+      { cron: '0 30 9 ? * MON-FRI', desc: '平日9:30' },
+      { cron: '0 0/15 * * * ?', desc: '15分ごと' },
+      { cron: '0 10/20 * * * ?', desc: '10分から20分間隔' },
+      { cron: '0 30 8,12,18 * * ?', desc: '8・12・18時30分' },
+      { cron: '0 0 10 ? * 2#1', desc: '毎月第1月曜10時' },
+      { cron: '0 0 18 L * ?', desc: '毎月末18時' },
+      { cron: '0 30 9 ? * 1L', desc: '毎月最終日曜9:30' },
+      { cron: '0 0 0 1 1 ? 2025', desc: '2025年元日0時' },
+      { cron: '0/1 0 2 * * ?', desc: '毎日2時0分に毎秒' }
+    ];
+    
+    var FIELD_LABELS = {
+      second: '秒',
+      minute: '分',
+      hour: '時',
+      dayOfMonth: '日',
+      month: '月',
+      dayOfWeek: '曜日',
+      year: '年'
+    };
+    
+    // DOM要素
+    var cronInput = document.getElementById('cronInput');
+    var resultEl = document.getElementById('result');
+    var errorListEl = document.getElementById('errorList');
+    var fieldsCard = document.getElementById('fieldsCard');
+    var fieldsGrid = document.getElementById('fieldsGrid');
+    var examplesEl = document.getElementById('examples');
+    var versionEl = document.getElementById('version');
+    
+    // バージョン表示
+    versionEl.textContent = QuartzCronJP.version;
+    
+    // 翻訳実行
+    function translateCron() {
+      var cron = cronInput.value.trim();
+      
+      if (!cron) {
+        resultEl.textContent = 'Cron式を入力してください';
+        resultEl.className = 'result';
+        errorListEl.style.display = 'none';
+        fieldsCard.style.display = 'none';
+        return;
+      }
+      
+      var result = QuartzCronJP.translate(cron);
+      
+      if (result.success) {
+        resultEl.textContent = '📅 ' + result.description;
+        resultEl.className = 'result success';
+        errorListEl.style.display = 'none';
+        
+        // フィールド詳細を表示
+        fieldsCard.style.display = 'block';
+        renderFields(result.fields);
+      } else {
+        resultEl.textContent = '⚠️ バリデーションエラー';
+        resultEl.className = 'result error';
+        
+        // エラーリストを表示
+        errorListEl.innerHTML = '';
+        result.validationErrors.forEach(function(err) {
+          var li = document.createElement('li');
+          li.textContent = err;
+          errorListEl.appendChild(li);
+        });
+        errorListEl.style.display = 'block';
+        
+        fieldsCard.style.display = 'none';
+      }
+    }
+    
+    // フィールド詳細をレンダリング
+    function renderFields(fields) {
+      fieldsGrid.innerHTML = '';
+      
+      var fieldKeys = ['second', 'minute', 'hour', 'dayOfMonth', 'month', 'dayOfWeek', 'year'];
+      
+      fieldKeys.forEach(function(key) {
+        var field = fields[key];
+        if (!field) return;
+        
+        var item = document.createElement('div');
+        item.className = 'field-item';
+        item.innerHTML = 
+          '<div class="field-label">' + FIELD_LABELS[key] + '</div>' +
+          '<div class="field-raw">' + escapeHtml(field.raw) + '</div>' +
+          '<div class="field-translated">' + (field.translated || '-') + '</div>';
+        
+        fieldsGrid.appendChild(item);
+      });
+    }
+    
+    // HTMLエスケープ
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+    
+    // サンプルをレンダリング
+    function renderExamples() {
+      EXAMPLES.forEach(function(example) {
+        var btn = document.createElement('button');
+        btn.className = 'example-btn';
+        btn.innerHTML = 
+          '<div class="example-cron">' + escapeHtml(example.cron) + '</div>' +
+          '<div class="example-desc">' + escapeHtml(example.desc) + '</div>';
+        
+        btn.addEventListener('click', function() {
+          cronInput.value = example.cron;
+          translateCron();
+          cronInput.focus();
+        });
+        
+        examplesEl.appendChild(btn);
+      });
+    }
+    
+    // イベントリスナー
+    cronInput.addEventListener('input', translateCron);
+    
+    // 初期化
+    renderExamples();
+    translateCron();
+  </script>
+</body>
+</html>

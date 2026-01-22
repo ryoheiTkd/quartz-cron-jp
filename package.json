@@ -1,0 +1,34 @@
+{
+  "name": "quartz-cron-jp",
+  "version": "1.0.0",
+  "description": "Quartz Cron式を日本語に翻訳するJavaScriptライブラリ",
+  "main": "quartz-cron-jp.js",
+  "types": "quartz-cron-jp.d.ts",
+  "files": [
+    "quartz-cron-jp.js",
+    "quartz-cron-jp.d.ts",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "cron",
+    "quartz",
+    "japanese",
+    "日本語",
+    "scheduler",
+    "translator",
+    "parser"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": ""
+  },
+  "homepage": ""
+}
