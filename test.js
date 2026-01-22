@@ -1045,6 +1045,85 @@ test('年ステップ＋時間リスト', function() {
 });
 
 // ============================================================
+// 特殊記号＋インターバル
+// ============================================================
+
+console.log('');
+console.log('── 特殊記号＋インターバル ──────────────────────────────────');
+
+test('月末＋時間インターバル', function() {
+  var result = QuartzCronJP.translate('0 0 2/3 L * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月末日 午前2時0分起点で3時間間隔');
+});
+
+test('月末＋時分インターバル', function() {
+  var result = QuartzCronJP.translate('0 5/15 2/3 L * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月末日 午前2時起点で3時間間隔、各時の5分起点で15分間隔');
+});
+
+test('15W＋時間インターバル', function() {
+  var result = QuartzCronJP.translate('0 0 2/3 15W * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月15日に最も近い平日 午前2時0分起点で3時間間隔');
+});
+
+test('LW＋時間インターバル', function() {
+  var result = QuartzCronJP.translate('0 0 2/3 LW * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月末日に最も近い平日 午前2時0分起点で3時間間隔');
+});
+
+test('L-5＋時間インターバル', function() {
+  var result = QuartzCronJP.translate('0 0 2/3 L-5 * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月末日の5日前 午前2時0分起点で3時間間隔');
+});
+
+test('第3金曜＋時間インターバル', function() {
+  var result = QuartzCronJP.translate('0 0 2/3 ? * 6#3');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月第3金曜日 午前2時0分起点で3時間間隔');
+});
+
+test('最終金曜＋時分インターバル', function() {
+  var result = QuartzCronJP.translate('0 5/15 2/3 ? * 6L');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月最終金曜日 午前2時起点で3時間間隔、各時の5分起点で15分間隔');
+});
+
+test('月末＋時間範囲インターバル＋分インターバル', function() {
+  var result = QuartzCronJP.translate('0 0/30 9-17/2 L * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月末日 午前9時〜午後5時の間、2時間間隔、毎時0分起点で30分間隔');
+});
+
+test('月インターバル＋第1月曜＋時間インターバル', function() {
+  var result = QuartzCronJP.translate('0 0 2/3 ? 1/3 MON#1');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年1月起点で3ヶ月間隔 第1月曜日 午前2時0分起点で3時間間隔');
+});
+
+test('月インターバル＋月末＋時間インターバル', function() {
+  var result = QuartzCronJP.translate('0 0 2/3 L 1/3 ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年1月起点で3ヶ月間隔 各月の末日 午前2時0分起点で3時間間隔');
+});
+
+test('LW＋時間範囲インターバル＋分インターバル', function() {
+  var result = QuartzCronJP.translate('0 5/15 9-17/2 LW * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月末日に最も近い平日 午前9時〜午後5時の間、2時間間隔、毎時5分起点で15分間隔');
+});
+
+test('月インターバル＋L-10＋時分インターバル', function() {
+  var result = QuartzCronJP.translate('0 0/30 2/3 L-10 1/3 ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年1月起点で3ヶ月間隔 各月の末日の10日前 午前2時起点で3時間間隔、各時の0分起点で30分間隔');
+});
+
+// ============================================================
 // 結果
 // ============================================================
 

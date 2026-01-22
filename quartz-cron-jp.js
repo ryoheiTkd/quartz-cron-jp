@@ -767,6 +767,14 @@
         return formatHour12(hourStart) + '起点で' + hourInterval + '時間間隔、各時の' + minStart + '分起点で' + minInterval + '分間隔';
       }
       
+      // 時が範囲＋間隔パターンの場合（例: 0 0/30 9-17/2）
+      if (hour.isRangeWithInterval) {
+        if (s !== 0 && parsed.second.type === 'single') {
+          return hour.text + '、毎時' + minStart + '分' + s + '秒起点で' + minInterval + '分間隔';
+        }
+        return hour.text + '、毎時' + minStart + '分起点で' + minInterval + '分間隔';
+      }
+      
       if (hour.isAll) {
         // 毎時の場合
         if (s !== 0 && parsed.second.type === 'single') {
@@ -793,6 +801,11 @@
     
     // 時間範囲＋間隔パターン（例: 0 0 9-17/2）
     if (hour.isRangeWithInterval) {
+      // 分がインターバルの場合（例: 0 0/30 9-17/2）
+      if (minute.isInterval) {
+        var minStart = parsed.minute.start === '*' ? '0' : parsed.minute.start;
+        return hour.text + '、毎時' + minStart + '分起点で' + parsed.minute.interval + '分間隔';
+      }
       // 分リストの場合（例: 0 0,15,30,45 9-17/2）
       if (parsed.minute.type === 'list') {
         minText = parsed.minute.items.map(function(item) {
