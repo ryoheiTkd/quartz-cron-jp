@@ -329,7 +329,7 @@
     }
     
     if (parsed.hour.type === 'range') {
-      return parsed.hour.from + '時〜' + parsed.hour.to + '時の間、' + m + '分';
+      return parsed.hour.from + '時〜' + parsed.hour.to + '時の間、毎時' + m + '分';
     }
     
     h = parsed.hour.value || parsed.hour.from || '0';
@@ -439,6 +439,112 @@
     return null;
   }
 
+  /**
+   * ステップ値（/の後の値）が0でないかチェック
+   */
+  function validateStepValue(field, name) {
+    if (!field || field === '*' || field === '?') return null;
+    
+    var stepMatch = field.match(/\/(\d+)/);
+    if (stepMatch && parseInt(stepMatch[1], 10) === 0) {
+      return name + 'のステップ値「0」は無効です（1以上を指定してください）';
+    }
+    return null;
+  }
+
+  /**
+   * 範囲指定（from-to）が正しいかチェック
+   */
+  function validateRange(field, name, valueMap) {
+    if (!field || field === '*' || field === '?') return null;
+    
+    // 範囲を抽出（例: 10-1, MON-FRI）
+    var rangePattern = /([A-Za-z]+|\d+)-([A-Za-z]+|\d+)/g;
+    var match;
+    
+    while ((match = rangePattern.exec(field)) !== null) {
+      var fromStr = match[1];
+      var toStr = match[2];
+      
+      // 数値または名前を数値に変換
+      var from = valueMap ? (valueMap[fromStr.toUpperCase()] || parseInt(fromStr, 10)) : parseInt(fromStr, 10);
+      var to = valueMap ? (valueMap[toStr.toUpperCase()] || parseInt(toStr, 10)) : parseInt(toStr, 10);
+      
+      if (!isNaN(from) && !isNaN(to) && from > to) {
+        return name + 'の範囲「' + fromStr + '-' + toStr + '」が不正です（開始値が終了値より大きい）';
+      }
+    }
+    return null;
+  }
+
+  /**
+   * #記号のバリデーション（曜日フィールド用）
+   */
+  function validateNthWeekday(field) {
+    if (!field || field.indexOf('#') === -1) return null;
+    
+    // #の前後をチェック
+    var hashMatch = field.match(/([A-Za-z]+|\d+)?#(\d+)?/);
+    if (hashMatch) {
+      var dayPart = hashMatch[1];
+      var nthPart = hashMatch[2];
+      
+      // #の前に曜日がない
+      if (!dayPart) {
+        return '「#」の前に曜日を指定してください';
+      }
+      
+      // #の後に数値がない
+      if (!nthPart) {
+        return '「#」の後に週番号（1〜5）を指定してください';
+      }
+      
+      // 週番号が1-5の範囲外
+      var nth = parseInt(nthPart, 10);
+      if (nth < 1 || nth > 5) {
+        return '「#」の週番号「' + nth + '」は範囲外です（1〜5）';
+      }
+    }
+    return null;
+  }
+
+  /**
+   * フィールドの構文チェック（連続カンマ、不完全な範囲など）
+   */
+  function validateFieldSyntax(field, name) {
+    if (!field || field === '*' || field === '?') return null;
+    
+    // 連続カンマ
+    if (/,,/.test(field)) {
+      return name + 'に連続したカンマがあります';
+    }
+    
+    // 不完全な範囲（末尾が-）
+    if (/-$/.test(field) || /-[,\/]/.test(field)) {
+      return name + 'の範囲指定が不完全です（終了値がありません）';
+    }
+    
+    // 不完全な範囲（先頭が-）
+    if (/^-/.test(field) || /[,\/]-/.test(field)) {
+      return name + 'の範囲指定が不完全です（開始値がありません）';
+    }
+    
+    return null;
+  }
+
+  /**
+   * 年フィールドが数値かチェック
+   */
+  function validateYearFormat(field) {
+    if (!field || field === '*') return null;
+    
+    // 年は数値、範囲、リスト、ステップのみ許可
+    if (!/^[\d,\-\/\*]+$/.test(field)) {
+      return '年の値「' + field + '」は無効です（数値を指定してください）';
+    }
+    return null;
+  }
+
   function validateDayOfWeek(field) {
     var cleaned = field.replace(/[?*#\d]/g, '');
     var parts = cleaned.split(/[-\/,L]+/).filter(Boolean);
@@ -520,6 +626,54 @@
       if (error) errors.push(error);
     });
     
+    // ステップ値チェック（/0は不正）
+    var stepChecks = [
+      { field: second, name: '秒' },
+      { field: minute, name: '分' },
+      { field: hour, name: '時' },
+      { field: dayOfMonth, name: '日' },
+      { field: month, name: '月' },
+      { field: dayOfWeek, name: '曜日' }
+    ];
+    
+    stepChecks.forEach(function(check) {
+      var error = validateStepValue(check.field, check.name);
+      if (error) errors.push(error);
+    });
+    
+    // 構文チェック（連続カンマ、不完全な範囲など）
+    var syntaxChecks = [
+      { field: second, name: '秒' },
+      { field: minute, name: '分' },
+      { field: hour, name: '時' },
+      { field: dayOfMonth, name: '日' },
+      { field: month, name: '月' },
+      { field: dayOfWeek, name: '曜日' }
+    ];
+    
+    syntaxChecks.forEach(function(check) {
+      var error = validateFieldSyntax(check.field, check.name);
+      if (error) errors.push(error);
+    });
+    
+    // 範囲の方向チェック（from > to は不正）
+    var dayOfWeekMap = { SUN: 1, MON: 2, TUE: 3, WED: 4, THU: 5, FRI: 6, SAT: 7 };
+    var monthMap = { JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6, JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12 };
+    
+    var rangeDirectionChecks = [
+      { field: second, name: '秒', map: null },
+      { field: minute, name: '分', map: null },
+      { field: hour, name: '時', map: null },
+      { field: dayOfMonth, name: '日', map: null },
+      { field: month, name: '月', map: monthMap },
+      { field: dayOfWeek, name: '曜日', map: dayOfWeekMap }
+    ];
+    
+    rangeDirectionChecks.forEach(function(check) {
+      var error = validateRange(check.field, check.name, check.map);
+      if (error) errors.push(error);
+    });
+    
     // 特殊記号の位置チェック
     if (hasSymbol(second, 'L') || hasSymbol(minute, 'L') || hasSymbol(hour, 'L') || hasSymbol(month, 'L')) {
       errors.push('「L」は日または曜日フィールドでのみ使用できます');
@@ -535,6 +689,12 @@
       errors.push('「#」は曜日フィールドでのみ使用できます');
     }
     
+    // #記号のバリデーション（曜日フィールド）
+    if (dayOfWeek !== '?' && dayOfWeek !== '*' && dayOfWeek.indexOf('#') !== -1) {
+      var nthError = validateNthWeekday(dayOfWeek);
+      if (nthError) errors.push(nthError);
+    }
+    
     // 曜日名チェック
     if (dayOfWeek !== '?' && dayOfWeek !== '*') {
       var dayError = validateDayOfWeek(dayOfWeek);
@@ -545,6 +705,12 @@
     if (month !== '?' && month !== '*') {
       var monthError = validateMonthName(month);
       if (monthError) errors.push(monthError);
+    }
+    
+    // 年フォーマットチェック
+    if (year) {
+      var yearFormatError = validateYearFormat(year);
+      if (yearFormatError) errors.push(yearFormatError);
     }
     
     return {
