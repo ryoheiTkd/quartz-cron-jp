@@ -69,7 +69,7 @@
    */
   function formatTime12(hour, minute) {
     var h = parseInt(hour, 10);
-    var m = String(minute).padStart(2, '0');
+    var m = parseInt(minute, 10);
     var period = h < 12 ? '午前' : '午後';
     var h12 = h === 0 ? 0 : (h <= 12 ? h : h - 12);
     return period + h12 + '時' + m + '分';
@@ -84,8 +84,8 @@
    */
   function formatTimeWithSec12(hour, minute, second) {
     var h = parseInt(hour, 10);
-    var m = String(minute).padStart(2, '0');
-    var s = String(second);
+    var m = parseInt(minute, 10);
+    var s = parseInt(second, 10);
     var period = h < 12 ? '午前' : '午後';
     var h12 = h === 0 ? 0 : (h <= 12 ? h : h - 12);
     return period + h12 + '時' + m + '分' + s + '秒';
@@ -483,6 +483,11 @@
       }
     } else if (hasMonth && hasDayOfMonth) {
       // 月+日指定の場合も「毎年」を付ける（年指定がない場合のみ）
+      if (!yearPrefix) {
+        prefix = '毎年';
+      }
+    } else if (hasMonth && hasDayOfWeek) {
+      // 月+曜日指定の場合も「毎年」を付ける（年指定がない場合のみ）
       if (!yearPrefix) {
         prefix = '毎年';
       }

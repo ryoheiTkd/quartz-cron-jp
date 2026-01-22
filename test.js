@@ -54,7 +54,7 @@ console.log('── 翻訳テスト ──────────────�
 test('毎日正午', function() {
   var result = QuartzCronJP.translate('0 0 12 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日午後12時00分');
+  assertEquals(result.description, '毎日午後12時0分');
 });
 
 test('平日9:30', function() {
@@ -78,7 +78,7 @@ test('10分から20分間隔', function() {
 test('毎月第1月曜', function() {
   var result = QuartzCronJP.translate('0 0 10 ? * 2#1');
   assertTrue(result.success);
-  assertEquals(result.description, '毎月第1月曜日 午前10時00分');
+  assertEquals(result.description, '毎月第1月曜日 午前10時0分');
 });
 
 test('毎月最終日曜', function() {
@@ -90,13 +90,13 @@ test('毎月最終日曜', function() {
 test('毎月末', function() {
   var result = QuartzCronJP.translate('0 0 18 L * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎月末日 午後6時00分');
+  assertEquals(result.description, '毎月末日 午後6時0分');
 });
 
 test('15日最寄り平日', function() {
   var result = QuartzCronJP.translate('0 0 9 15W * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎月15日に最も近い平日 午前9時00分');
+  assertEquals(result.description, '毎月15日に最も近い平日 午前9時0分');
 });
 
 test('時間リスト', function() {
@@ -108,13 +108,13 @@ test('時間リスト', function() {
 test('年指定', function() {
   var result = QuartzCronJP.translate('0 0 0 1 1 ? 2025');
   assertTrue(result.success);
-  assertEquals(result.description, '2025年1月1日 午前0時00分');
+  assertEquals(result.description, '2025年1月1日 午前0時0分');
 });
 
 test('秒間隔+時刻', function() {
   var result = QuartzCronJP.translate('0/1 0 2 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日午前2時00分に毎秒');
+  assertEquals(result.description, '毎日午前2時0分に毎秒');
 });
 
 // ============================================================
