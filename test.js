@@ -238,13 +238,13 @@ test('時間間隔：0時30分起点', function() {
 test('秒間隔：0秒起点', function() {
   var result = QuartzCronJP.translate('0/10 * * * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '0秒起点で10秒間隔');
+  assertEquals(result.description, '毎分0秒起点で10秒間隔');
 });
 
 test('秒間隔：5秒起点', function() {
   var result = QuartzCronJP.translate('5/15 * * * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '5秒起点で15秒間隔');
+  assertEquals(result.description, '毎分5秒起点で15秒間隔');
 });
 
 test('分間隔＋時間範囲', function() {
@@ -263,6 +263,18 @@ test('分間隔＋特定時刻＋秒', function() {
   var result = QuartzCronJP.translate('30 5/20 3 * * ?');
   assertTrue(result.success);
   assertEquals(result.description, '毎日午前3時5分30秒起点で20分間隔');
+});
+
+test('時間＋分 両方間隔', function() {
+  var result = QuartzCronJP.translate('0 2/30 0/2 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前0時2分起点で2時間・30分間隔');
+});
+
+test('時間＋分 両方間隔＋秒', function() {
+  var result = QuartzCronJP.translate('30 5/10 2/4 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前2時5分30秒起点で4時間・10分間隔');
 });
 
 // ============================================================
@@ -616,6 +628,121 @@ test('parseField: nthWeekday', function() {
   assertEquals(result.type, 'nthWeekday');
   assertEquals(result.day, '2');
   assertEquals(result.nth, '1');
+});
+
+// ============================================================
+// 翻訳テスト：複雑・意地悪パターン
+// ============================================================
+
+console.log('');
+console.log('── 複雑・意地悪パターン ─────────────────────────────────────');
+
+test('分リスト（0,30）', function() {
+  var result = QuartzCronJP.translate('0 0,30 * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎時0・30分');
+});
+
+test('分リスト＋時リスト', function() {
+  var result = QuartzCronJP.translate('0 15,45 9,12,18 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前9・午後12・午後6時の15・45分');
+});
+
+test('時間範囲＋間隔（9-17/2）', function() {
+  var result = QuartzCronJP.translate('0 0 9-17/2 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前9時〜午後5時の間、2時間間隔');
+});
+
+test('曜日範囲＋間隔（2-6/2）', function() {
+  var result = QuartzCronJP.translate('0 0 9 ? * 2-6/2');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎週月・水・金曜日 午前9時');
+});
+
+test('秒＋分＋時 全部間隔', function() {
+  var result = QuartzCronJP.translate('0/10 5/15 2/3 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前2時起点で3時間間隔、5分起点で15分間隔、0秒起点で10秒間隔');
+});
+
+test('日の範囲＋間隔（1-15/5）', function() {
+  var result = QuartzCronJP.translate('0 0 0 1-15/5 * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月1〜15日の間、5日間隔 午前0時');
+});
+
+test('月の範囲＋間隔（1-6/2）', function() {
+  var result = QuartzCronJP.translate('0 0 0 1 1-6/2 ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年1月〜6月の間、2ヶ月間隔 1日 午前0時');
+});
+
+test('時リスト（0,12）', function() {
+  var result = QuartzCronJP.translate('0 0 0,12 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前0・午後12時');
+});
+
+test('平日＋時間範囲＋間隔', function() {
+  var result = QuartzCronJP.translate('0 0 6-20/2 ? * MON-FRI');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎週平日（月〜金） 午前6時〜午後8時の間、2時間間隔');
+});
+
+test('特定日時（年末カウントダウン）', function() {
+  var result = QuartzCronJP.translate('59 59 23 31 12 ? 2099');
+  assertTrue(result.success);
+  assertEquals(result.description, '2099年12月31日 午後11時59分59秒');
+});
+
+test('分リスト（4つ）', function() {
+  var result = QuartzCronJP.translate('0 0,15,30,45 * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎時0・15・30・45分');
+});
+
+test('秒＋分＋時 全部*/n', function() {
+  var result = QuartzCronJP.translate('*/5 */10 */2 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前0時起点で2時間間隔、0分起点で10分間隔、0秒起点で5秒間隔');
+});
+
+test('1Wパターン（月初最寄り平日）', function() {
+  var result = QuartzCronJP.translate('0 0 9 1W * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月1日に最も近い平日 午前9時');
+});
+
+test('最終木曜日（5L）', function() {
+  var result = QuartzCronJP.translate('0 0 0 ? * 5L');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月最終木曜日 午前0時');
+});
+
+test('第4金曜日（6#4）', function() {
+  var result = QuartzCronJP.translate('0 30 10 ? * 6#4');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月第4金曜日 午前10時30分');
+});
+
+test('四半期月の第1月曜', function() {
+  var result = QuartzCronJP.translate('0 0 0 ? 1,4,7,10 MON#1');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年1月・4月・7月・10月 第1月曜日 午前0時');
+});
+
+test('LW（月末最寄り平日）', function() {
+  var result = QuartzCronJP.translate('0 0 9 LW * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月末日に最も近い平日 午前9時');
+});
+
+test('L-3（月末3日前）', function() {
+  var result = QuartzCronJP.translate('0 0 0 L-3 * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月末日の3日前 午前0時');
 });
 
 // ============================================================

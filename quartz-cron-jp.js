@@ -145,8 +145,25 @@
     if (value === '?') return { type: 'any' };
     if (value === 'L') return { type: 'last' };
     
-    if (value.slice(-1) === 'L' && value !== 'L') {
-      return { type: 'lastWeekday', day: value.slice(0, -1) };
+    // LW: 月末に最も近い平日（日フィールド専用）
+    if (value === 'LW') {
+      return { type: 'lastWeekday' };
+    }
+    
+    // L-n: 月末からn日前（例: L-3 = 月末から3日前）
+    if (/^L-\d+$/.test(value)) {
+      var offset = value.substring(2);
+      return { type: 'lastOffset', offset: offset };
+    }
+    
+    // nL: 最終n曜日（例: 1L = 最終日曜日、6L = 最終金曜日）
+    if (/^\d+L$/.test(value)) {
+      return { type: 'lastWeekdayOfMonth', day: value.slice(0, -1) };
+    }
+    
+    // 曜日名L: 最終曜日（例: FRIL = 最終金曜日）
+    if (/^[A-Z]{3}L$/i.test(value)) {
+      return { type: 'lastWeekdayOfMonth', day: value.slice(0, -1) };
     }
     
     if (value.slice(-1) === 'W') {
@@ -160,7 +177,21 @@
     
     if (value.indexOf('/') !== -1) {
       var slashParts = value.split('/');
-      return { type: 'interval', start: slashParts[0], interval: slashParts[1] };
+      var startPart = slashParts[0];
+      var intervalPart = slashParts[1];
+      
+      // 範囲＋間隔のパターン（例: 9-17/2, 1-5/2）
+      if (startPart.indexOf('-') !== -1) {
+        var rangeParts = startPart.split('-');
+        return { 
+          type: 'rangeWithInterval', 
+          from: rangeParts[0], 
+          to: rangeParts[1], 
+          interval: intervalPart 
+        };
+      }
+      
+      return { type: 'interval', start: startPart, interval: intervalPart };
     }
     
     if (value.indexOf('-') !== -1 && value.indexOf(',') === -1) {
@@ -207,6 +238,15 @@
         return { text: '最終' };
       
       case 'lastWeekday':
+        // LW: 月末に最も近い平日
+        return { text: '末日に最も近い平日' };
+      
+      case 'lastOffset':
+        // L-n: 月末からn日前
+        return { text: '末日の' + parsed.offset + '日前' };
+      
+      case 'lastWeekdayOfMonth':
+        // nL または 曜日名L: 最終n曜日
         return { text: '最終' + translateDay(parsed.day) + '曜日' };
       
       case 'nearestWeekday':
@@ -227,10 +267,77 @@
         }
         
         // 「起点で〜間隔」形式で表示
+        // 時間の場合は12時間表記を使用
+        if (fieldType === 'hour') {
+          return {
+            text: formatHour12(startVal).replace('時', '') + '時起点で' + intervalVal + unit + '間隔',
+            isInterval: true,
+            startValue: startVal
+          };
+        }
         return {
           text: startVal + getFieldUnit(fieldType) + '起点で' + intervalVal + unit + '間隔',
           isInterval: true,
           startValue: startVal
+        };
+      
+      case 'rangeWithInterval':
+        from = parsed.from;
+        to = parsed.to;
+        intervalVal = parsed.interval;
+        unit = fieldType === 'hour' ? '時間' : getFieldUnit(fieldType);
+        
+        if (fieldType === 'dayOfWeek') {
+          // 曜日範囲＋間隔：展開して表示（Quartz式: 1=日, 2=月, ..., 7=土）
+          var quartzToDayName = { '1': '日', '2': '月', '3': '火', '4': '水', '5': '木', '6': '金', '7': '土',
+            'SUN': '日', 'MON': '月', 'TUE': '火', 'WED': '水', 'THU': '木', 'FRI': '金', 'SAT': '土' };
+          var dayFromVal = parseInt(from, 10) || 0;
+          var dayToVal = parseInt(to, 10) || 0;
+          var interval = parseInt(intervalVal, 10);
+          
+          // 数字の場合
+          if (dayFromVal > 0 && dayToVal > 0) {
+            var dayNames = [];
+            for (var d = dayFromVal; d <= dayToVal; d += interval) {
+              dayNames.push(quartzToDayName[String(d)] || d);
+            }
+            return { text: dayNames.join('・') + '曜日', isRangeWithInterval: true };
+          }
+          
+          // 名前の場合（MON-FRI/2など）
+          var dayOrder = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+          var startIdx = dayOrder.indexOf(from.toUpperCase());
+          var endIdx = dayOrder.indexOf(to.toUpperCase());
+          if (startIdx >= 0 && endIdx >= 0) {
+            var dayNamesList = [];
+            for (var di = startIdx; di <= endIdx; di += interval) {
+              dayNamesList.push(quartzToDayName[dayOrder[di]]);
+            }
+            return { text: dayNamesList.join('・') + '曜日', isRangeWithInterval: true };
+          }
+          
+          return { text: from + '〜' + to + '曜日', isRangeWithInterval: true };
+        }
+        if (fieldType === 'hour') {
+          var fromH = formatHour12(from);
+          var toH = formatHour12(to);
+          return { 
+            text: fromH + '〜' + toH + 'の間、' + intervalVal + unit + '間隔',
+            isRangeWithInterval: true,
+            rangeFrom: from,
+            rangeTo: to,
+            intervalValue: intervalVal
+          };
+        }
+        if (fieldType === 'month') {
+          return { 
+            text: translateMonth(from) + '〜' + translateMonth(to) + 'の間、' + intervalVal + 'ヶ月間隔',
+            isRangeWithInterval: true 
+          };
+        }
+        return { 
+          text: from + '〜' + to + getFieldUnit(fieldType) + 'の間、' + intervalVal + unit + '間隔',
+          isRangeWithInterval: true 
         };
       
       case 'range':
@@ -347,11 +454,21 @@
     var second = translated.second;
     var minute = translated.minute;
     var hour = translated.hour;
-    var h, m, s, hours;
+    var h, m, s, hours, minText;
     
     // 秒の値を取得（0かどうかの判定用）
     var secVal = parseInt(parsed.second.value || '0', 10);
     var minVal = parseInt(parsed.minute.value || '0', 10);
+    
+    // 分リストのテキスト生成
+    function getMinuteListText() {
+      if (parsed.minute.type === 'list') {
+        return parsed.minute.items.map(function(item) {
+          return item.value;
+        }).join('・') + '分';
+      }
+      return minVal + '分';
+    }
     
     // 秒の間隔パターン
     if (second.isInterval) {
@@ -384,7 +501,8 @@
         h = parsed.hour.value || '0';
         return formatHour12(h) + '台に毎分' + second.text;
       }
-      return second.text;
+      // 時も分も*の場合は「毎分」を付ける
+      return '毎分' + second.text;
     }
     
     // 分の間隔パターン
@@ -394,6 +512,16 @@
       var minInterval = parsed.minute.interval;
       // 秒が0でない場合は秒も起点に含める
       s = secVal;
+      
+      // 時も間隔パターンの場合（例: 0 2/30 0/2 * * ?）
+      if (hour.isInterval) {
+        var hourStart = parsed.hour.start === '*' ? '0' : parsed.hour.start;
+        var hourInterval = parsed.hour.interval;
+        if (s !== 0 && parsed.second.type === 'single') {
+          return formatTimeWithSec12(hourStart, minStart, s) + '起点で' + hourInterval + '時間・' + minInterval + '分間隔';
+        }
+        return formatTime12(hourStart, minStart) + '起点で' + hourInterval + '時間・' + minInterval + '分間隔';
+      }
       
       if (hour.isAll) {
         // 毎時の場合
@@ -419,6 +547,11 @@
       return formatTime12(h, minStart) + '起点で' + minInterval + '分間隔';
     }
     
+    // 時間範囲＋間隔パターン（例: 0 0 9-17/2）
+    if (hour.isRangeWithInterval) {
+      return hour.text;
+    }
+    
     // 時の間隔パターン
     if (hour.isInterval) {
       if (!minute.isAll) {
@@ -434,6 +567,7 @@
         var hourStart = parsed.hour.start === '*' ? '0' : parsed.hour.start;
         return formatTime12(hourStart, m) + '起点で' + parsed.hour.interval + '時間間隔';
       }
+      
       return hour.text;
     }
     
@@ -450,6 +584,17 @@
     
     // 毎時パターン（時が*、分が具体値）
     if (hour.isAll && !minute.isAll) {
+      // 分リストの場合
+      if (parsed.minute.type === 'list') {
+        minText = getMinuteListText();
+        if (second.isAll) {
+          return '毎時' + minText + 'に毎秒';
+        }
+        if (secVal !== 0 && parsed.second.type === 'single') {
+          return '毎時' + minText + secVal + '秒';
+        }
+        return '毎時' + minText;
+      }
       if (second.isAll) {
         return '毎時' + minVal + '分に毎秒';
       }
@@ -483,6 +628,21 @@
         }
         return formatHour12(item.value).replace('時', '');
       }).join('・') + '時';
+      
+      // 分リストの場合
+      if (parsed.minute.type === 'list') {
+        minText = parsed.minute.items.map(function(item) {
+          return item.value;
+        }).join('・') + '分';
+        if (second.isAll) {
+          return hours + 'の' + minText + 'に毎秒';
+        }
+        if (s !== 0 && parsed.second.type === 'single') {
+          return hours + 'の' + minText + s + '秒';
+        }
+        return hours + 'の' + minText;
+      }
+      
       // 秒があれば表示、0分なら省略
       if (second.isAll) {
         return hours + (m === 0 ? '' : m + '分') + 'に毎秒';
@@ -555,10 +715,12 @@
     hasMonth = !translated.month.isAll && translated.month.text;
     
     if (hasMonth && hasDayOfMonth) {
+      // 月がrangeWithIntervalの場合はスペースを入れる、それ以外は結合
+      var monthDaySep = translated.month.isRangeWithInterval ? ' ' : '';
       if (hasDayOfWeek) {
-        parts.push(translated.month.text + translated.dayOfMonth.text + 'の' + translated.dayOfWeek.text);
+        parts.push(translated.month.text + monthDaySep + translated.dayOfMonth.text + 'の' + translated.dayOfWeek.text);
       } else {
-        parts.push(translated.month.text + translated.dayOfMonth.text);
+        parts.push(translated.month.text + monthDaySep + translated.dayOfMonth.text);
       }
     } else if (hasMonth) {
       parts.push(translated.month.text);
@@ -605,7 +767,7 @@
       prefix = '毎月';
       if (!hasDayOfMonth && hasDayOfWeek) {
         var dayOfWeekType = parsed.dayOfWeek.type;
-        var isMonthlyPattern = dayOfWeekType === 'lastWeekday' || dayOfWeekType === 'nthWeekday';
+        var isMonthlyPattern = dayOfWeekType === 'lastWeekdayOfMonth' || dayOfWeekType === 'nthWeekday';
         if (!isMonthlyPattern) {
           prefix = '毎週';
         }
