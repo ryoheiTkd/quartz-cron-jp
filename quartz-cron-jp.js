@@ -1019,12 +1019,14 @@
     hasMonth = !translated.month.isAll && translated.month.text;
     
     if (hasMonth && hasDayOfMonth) {
-      // 月がrangeWithIntervalの場合はスペースを入れる、それ以外は結合
-      var monthDaySep = translated.month.isRangeWithInterval ? ' ' : '';
+      // 月がrangeWithIntervalまたはintervalの場合は「各月の」を入れる
+      var hasMonthInterval = translated.month.isRangeWithInterval || translated.month.isInterval;
+      var dayPrefix = hasMonthInterval ? '各月の' : '';
+      var sep = hasMonthInterval ? ' ' : '';
       if (hasDayOfWeek) {
-        parts.push(translated.month.text + monthDaySep + translated.dayOfMonth.text + 'の' + translated.dayOfWeek.text);
+        parts.push(translated.month.text + sep + dayPrefix + translated.dayOfMonth.text + 'の' + translated.dayOfWeek.text);
       } else {
-        parts.push(translated.month.text + monthDaySep + translated.dayOfMonth.text);
+        parts.push(translated.month.text + sep + dayPrefix + translated.dayOfMonth.text);
       }
     } else if (hasMonth) {
       parts.push(translated.month.text);
@@ -1042,7 +1044,13 @@
     // 時刻
     timeDesc = buildTimeDescription(translated, parsed);
     if (timeDesc) {
-      parts.push(timeDesc);
+      // 日がinterval/rangeWithIntervalの場合は「各日の」を付ける（上位がintervalなら下位に接頭辞を付ける一貫性）
+      var hasDayInterval = translated.dayOfMonth.isInterval || translated.dayOfMonth.isRangeWithInterval;
+      if (hasDayInterval) {
+        parts.push('各日の' + timeDesc);
+      } else {
+        parts.push(timeDesc);
+      }
     }
     
     // 頻度の接頭辞

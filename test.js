@@ -670,13 +670,13 @@ test('秒＋分＋時 全部間隔', function() {
 test('日の範囲＋間隔（1-15/5）', function() {
   var result = QuartzCronJP.translate('0 0 0 1-15/5 * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎月1〜15日の間、5日間隔 午前0時');
+  assertEquals(result.description, '毎月1〜15日の間、5日間隔 各日の午前0時');
 });
 
 test('月の範囲＋間隔（1-6/2）', function() {
   var result = QuartzCronJP.translate('0 0 0 1 1-6/2 ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎年1月〜6月の間、2ヶ月間隔 1日 午前0時');
+  assertEquals(result.description, '毎年1月〜6月の間、2ヶ月間隔 各月の1日 午前0時');
 });
 
 test('時リスト（0,12）', function() {
@@ -743,6 +743,79 @@ test('L-3（月末3日前）', function() {
   var result = QuartzCronJP.translate('0 0 0 L-3 * ?');
   assertTrue(result.success);
   assertEquals(result.description, '毎月末日の3日前 午前0時');
+});
+
+// ============================================================
+// 中抜け・複合インターバルパターン
+// ============================================================
+
+console.log('');
+console.log('── 中抜け・複合インターバルパターン ─────────────────────────');
+
+test('秒分時日月 全部間隔', function() {
+  var result = QuartzCronJP.translate('2/34 5/15 2/3 4/2 4/2 ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年4月起点で2ヶ月間隔 各月の4日起点で2日間隔 各日の午前2時起点で3時間間隔、各時の5分起点で15分間隔、各分の2秒起点で34秒間隔');
+});
+
+test('秒+時 間隔（分固定）', function() {
+  var result = QuartzCronJP.translate('0/10 30 2/3 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前2時起点で3時間間隔、各時の30分、各分の0秒起点で10秒間隔');
+});
+
+test('秒+時 間隔（分*）', function() {
+  var result = QuartzCronJP.translate('0/10 * 2/3 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前2時起点で3時間間隔、各分の0秒起点で10秒間隔');
+});
+
+test('秒+分 間隔（時固定）', function() {
+  var result = QuartzCronJP.translate('0/10 5/15 9 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前9時台に5分起点で15分間隔、各分の0秒起点で10秒間隔');
+});
+
+test('秒+分 間隔（時*）', function() {
+  var result = QuartzCronJP.translate('0/10 5/15 * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '5分起点で15分間隔、各分の0秒起点で10秒間隔');
+});
+
+test('秒のみ間隔（時分固定）', function() {
+  var result = QuartzCronJP.translate('0/10 30 9 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前9時30分に0秒起点で10秒間隔');
+});
+
+test('時+日 間隔', function() {
+  var result = QuartzCronJP.translate('0 0 2/3 1/5 * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月1日起点で5日間隔 各日の午前2時0分起点で3時間間隔');
+});
+
+test('時+月 間隔', function() {
+  var result = QuartzCronJP.translate('0 0 2/3 * 1/3 ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年1月起点で3ヶ月間隔 午前2時0分起点で3時間間隔');
+});
+
+test('日+月 間隔', function() {
+  var result = QuartzCronJP.translate('0 0 9 1/5 1/3 ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年1月起点で3ヶ月間隔 各月の1日起点で5日間隔 各日の午前9時');
+});
+
+test('分+時+日 間隔', function() {
+  var result = QuartzCronJP.translate('0 5/15 2/3 1/5 * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月1日起点で5日間隔 各日の午前2時起点で3時間間隔、各時の5分起点で15分間隔');
+});
+
+test('秒+分+時+日+月 全部間隔', function() {
+  var result = QuartzCronJP.translate('0/10 5/15 2/3 1/5 1/3 ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年1月起点で3ヶ月間隔 各月の1日起点で5日間隔 各日の午前2時起点で3時間間隔、各時の5分起点で15分間隔、各分の0秒起点で10秒間隔');
 });
 
 // ============================================================
