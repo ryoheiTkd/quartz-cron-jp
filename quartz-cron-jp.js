@@ -852,8 +852,12 @@
           return '毎時' + m + '分';
         }
         // 時の起点と分を組み合わせて表現（例: 午前0時30分起点で2時間間隔）
+        // 分が0の場合は省略（例: 午前0時起点で2時間間隔）
         if (secVal !== 0 && parsed.second.type === 'single') {
           return formatTimeWithSec12(hourStart, m, secVal) + '起点で' + parsed.hour.interval + '時間間隔';
+        }
+        if (parseInt(m, 10) === 0) {
+          return formatHour12(hourStart) + '起点で' + parsed.hour.interval + '時間間隔';
         }
         return formatTime12(hourStart, m) + '起点で' + parsed.hour.interval + '時間間隔';
       }
