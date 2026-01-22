@@ -26,6 +26,12 @@
     'SUN': '日', 'MON': '月', 'TUE': '火', 'WED': '水', 'THU': '木', 'FRI': '金', 'SAT': '土'
   };
 
+  // 日本式曜日ソート順（月=0, 火=1, ... 日=6）
+  var DAY_SORT_ORDER = {
+    '1': 6, '2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5,
+    'SUN': 6, 'MON': 0, 'TUE': 1, 'WED': 2, 'THU': 3, 'FRI': 4, 'SAT': 5
+  };
+
   var MONTH_NAMES = {
     '1': '1月', '2': '2月', '3': '3月', '4': '4月', '5': '5月', '6': '6月',
     '7': '7月', '8': '8月', '9': '9月', '10': '10月', '11': '11月', '12': '12月',
@@ -42,6 +48,11 @@
 
   function translateDay(day) {
     return DAY_NAMES[day.toUpperCase()] || DAY_NAMES[day] || day;
+  }
+
+  function getDaySortOrder(day) {
+    var key = day.toUpperCase ? day.toUpperCase() : day;
+    return DAY_SORT_ORDER[key] !== undefined ? DAY_SORT_ORDER[key] : 99;
   }
 
   function translateMonth(month) {
@@ -230,7 +241,12 @@
               (parsed.to === 'FRI' || parsed.to === '6')) {
             return { text: '平日（月〜金）' };
           }
-          return { text: from + '曜日〜' + to + '曜日' };
+          // 全曜日（SUN-SAT / 1-7）の場合は月〜日に変換
+          if ((parsed.from === 'SUN' || parsed.from === '1') &&
+              (parsed.to === 'SAT' || parsed.to === '7')) {
+            return { text: '月〜日曜日' };
+          }
+          return { text: from + '〜' + to + '曜日' };
         }
         if (fieldType === 'month') {
           return { text: translateMonth(parsed.from) + '〜' + translateMonth(parsed.to) };
@@ -238,21 +254,72 @@
         return { text: parsed.from + '〜' + parsed.to + getFieldUnit(fieldType) };
       
       case 'list':
+        // 曜日の場合は日本式順序（月曜始まり）でソートし、連続グループをまとめる
+        if (fieldType === 'dayOfWeek') {
+          // 範囲を展開して単一値のリストに変換
+          var expandedDays = [];
+          parsed.items.forEach(function(item) {
+            if (item.type === 'range') {
+              // 範囲を展開
+              var startOrder = getDaySortOrder(item.from);
+              var endOrder = getDaySortOrder(item.to);
+              for (var i = startOrder; i <= endOrder; i++) {
+                expandedDays.push(i);
+              }
+            } else {
+              expandedDays.push(getDaySortOrder(item.value));
+            }
+          });
+          
+          // 重複を除去してソート
+          expandedDays = expandedDays.filter(function(v, i, a) {
+            return a.indexOf(v) === i;
+          }).sort(function(a, b) { return a - b; });
+          
+          // 連続グループを検出
+          var groups = [];
+          var groupStart = expandedDays[0];
+          var groupEnd = expandedDays[0];
+          
+          for (var i = 1; i < expandedDays.length; i++) {
+            if (expandedDays[i] === groupEnd + 1) {
+              // 連続している
+              groupEnd = expandedDays[i];
+            } else {
+              // 連続が途切れた
+              groups.push({ start: groupStart, end: groupEnd });
+              groupStart = expandedDays[i];
+              groupEnd = expandedDays[i];
+            }
+          }
+          groups.push({ start: groupStart, end: groupEnd });
+          
+          // ソート順から曜日名に変換
+          var dayFromOrder = ['月', '火', '水', '木', '金', '土', '日'];
+          items = groups.map(function(g) {
+            var count = g.end - g.start + 1;
+            if (count >= 3) {
+              // 3つ以上連続なら「〜」でまとめる
+              return dayFromOrder[g.start] + '〜' + dayFromOrder[g.end];
+            } else if (count === 2) {
+              // 2つなら個別に
+              return dayFromOrder[g.start] + '・' + dayFromOrder[g.end];
+            } else {
+              // 1つ
+              return dayFromOrder[g.start];
+            }
+          });
+          return { text: items.join('・') + '曜日' };
+        }
+        
         items = parsed.items.map(function(item) {
           if (item.type === 'range') {
-            if (fieldType === 'dayOfWeek') {
-              return translateDay(item.from) + '〜' + translateDay(item.to);
-            }
             return item.from + '〜' + item.to;
           }
-          if (fieldType === 'dayOfWeek') return translateDay(item.value);
           if (fieldType === 'month') return translateMonth(item.value);
           return item.value;
         });
         
-        if (fieldType === 'dayOfWeek') {
-          return { text: items.join('・') + '曜日' };
-        }
         if (fieldType === 'month') {
           return { text: items.join('・') };
         }
