@@ -274,7 +274,7 @@ test('時間＋分 両方間隔', function() {
 test('時間＋分 両方間隔＋秒', function() {
   var result = QuartzCronJP.translate('30 5/10 2/4 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日午前2時起点で4時間間隔、各時の5分起点で10分間隔、30秒');
+  assertEquals(result.description, '毎日午前2時起点で4時間間隔、各時の5分起点で10分間隔、各分の30秒');
 });
 
 // ============================================================
