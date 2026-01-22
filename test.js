@@ -268,13 +268,13 @@ test('分間隔＋特定時刻＋秒', function() {
 test('時間＋分 両方間隔', function() {
   var result = QuartzCronJP.translate('0 2/30 0/2 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日午前0時2分起点で2時間・30分間隔');
+  assertEquals(result.description, '毎日午前0時起点で2時間間隔、各時の2分起点で30分間隔');
 });
 
 test('時間＋分 両方間隔＋秒', function() {
   var result = QuartzCronJP.translate('30 5/10 2/4 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日午前2時5分30秒起点で4時間・10分間隔');
+  assertEquals(result.description, '毎日午前2時起点で4時間間隔、各時の5分起点で10分間隔、30秒');
 });
 
 // ============================================================
@@ -664,7 +664,7 @@ test('曜日範囲＋間隔（2-6/2）', function() {
 test('秒＋分＋時 全部間隔', function() {
   var result = QuartzCronJP.translate('0/10 5/15 2/3 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日午前2時起点で3時間間隔、5分起点で15分間隔、0秒起点で10秒間隔');
+  assertEquals(result.description, '毎日午前2時起点で3時間間隔、各時の5分起点で15分間隔、各分の0秒起点で10秒間隔');
 });
 
 test('日の範囲＋間隔（1-15/5）', function() {
@@ -706,7 +706,7 @@ test('分リスト（4つ）', function() {
 test('秒＋分＋時 全部*/n', function() {
   var result = QuartzCronJP.translate('*/5 */10 */2 * * ?');
   assertTrue(result.success);
-  assertEquals(result.description, '毎日午前0時起点で2時間間隔、0分起点で10分間隔、0秒起点で5秒間隔');
+  assertEquals(result.description, '毎日午前0時起点で2時間間隔、各時の0分起点で10分間隔、各分の0秒起点で5秒間隔');
 });
 
 test('1Wパターン（月初最寄り平日）', function() {
@@ -956,11 +956,19 @@ console.log('── 年フィールドのステップ値 ───────�
 test('年ステップ（2025/2）', function() {
   var result = QuartzCronJP.translate('0 0 9 1 1 ? 2025/2');
   assertTrue(result.success);
+  assertEquals(result.description, '2025年起点で2年間隔の1月1日 午前9時');
 });
 
 test('年範囲＋ステップ（2025-2035/3）', function() {
   var result = QuartzCronJP.translate('0 0 9 1 1 ? 2025-2035/3');
   assertTrue(result.success);
+  assertEquals(result.description, '2025年〜2035年の間、3年間隔の1月1日 午前9時');
+});
+
+test('年ステップ＋時間リスト', function() {
+  var result = QuartzCronJP.translate('0 30 8,12,18 * * ? 2022/2');
+  assertTrue(result.success);
+  assertEquals(result.description, '2022年起点で2年間隔の毎日午前8・午後12・午後6時30分');
 });
 
 // ============================================================

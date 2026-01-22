@@ -663,25 +663,29 @@
       
       // 分も間隔指定の場合（例: 10/3 1/10 2）
       if (minute.isInterval) {
-        // 時も間隔指定の場合（例: 10/3 1/10 2/2）
+        // 時も間隔指定の場合（例: 0/10 5/15 2/3）
         if (hour.isInterval) {
-          return hour.text + '、' + minute.text + '、' + second.text;
+          // 「各時の」「各分の」を使ってより分かりやすく
+          var hourStart = parsed.hour.start === '*' ? '0' : parsed.hour.start;
+          var minStart = parsed.minute.start === '*' ? '0' : parsed.minute.start;
+          var secStart = parsed.second.start === '*' ? '0' : parsed.second.start;
+          return formatHour12(hourStart) + '起点で' + parsed.hour.interval + '時間間隔、各時の' + minStart + '分起点で' + parsed.minute.interval + '分間隔、各分の' + secStart + '秒起点で' + parsed.second.interval + '秒間隔';
         }
         // 時が範囲＋間隔の場合（例: */30 0/20 6-22/4）
         if (hour.isRangeWithInterval) {
-          return hour.text + '、' + minute.text + '、' + second.text;
+          return hour.text + '、各時の' + minute.text + '、各分の' + second.text;
         }
         // 時が範囲の場合（例: */10 */5 8-20）
         if (parsed.hour.type === 'range') {
           var fromH = formatHour12(parsed.hour.from);
           var toH = formatHour12(parsed.hour.to);
-          return fromH + '〜' + toH + 'の間、' + minute.text + '、' + second.text;
+          return fromH + '〜' + toH + 'の間、各時の' + minute.text + '、各分の' + second.text;
         }
         if (!hour.isAll) {
           h = parsed.hour.value || '0';
-          return formatHour12(h) + '台に' + minute.text + '、' + second.text;
+          return formatHour12(h) + '台に' + minute.text + '、各分の' + second.text;
         }
-        return minute.text + '、' + second.text;
+        return minute.text + '、各分の' + second.text;
       }
       // 時だけ間隔指定の場合（例: 0/5 0 2/2）
       if (hour.isInterval) {
@@ -758,9 +762,9 @@
         var hourStart = parsed.hour.start === '*' ? '0' : parsed.hour.start;
         var hourInterval = parsed.hour.interval;
         if (s !== 0 && parsed.second.type === 'single') {
-          return formatTimeWithSec12(hourStart, minStart, s) + '起点で' + hourInterval + '時間・' + minInterval + '分間隔';
+          return formatHour12(hourStart) + '起点で' + hourInterval + '時間間隔、各時の' + minStart + '分起点で' + minInterval + '分間隔、' + s + '秒';
         }
-        return formatTime12(hourStart, minStart) + '起点で' + hourInterval + '時間・' + minInterval + '分間隔';
+        return formatHour12(hourStart) + '起点で' + hourInterval + '時間間隔、各時の' + minStart + '分起点で' + minInterval + '分間隔';
       }
       
       if (hour.isAll) {
@@ -1000,6 +1004,12 @@
         yearPrefix = parsed.year.from + '年〜' + parsed.year.to + '年';
       } else if (parsed.year.type === 'list') {
         yearPrefix = translated.year.text;
+      } else if (parsed.year.type === 'interval') {
+        // 2022/2 → 2022年起点で2年間隔
+        yearPrefix = parsed.year.start + '年起点で' + parsed.year.interval + '年間隔';
+      } else if (parsed.year.type === 'rangeWithInterval') {
+        // 2022-2030/2 → 2022年〜2030年の間、2年間隔
+        yearPrefix = parsed.year.from + '年〜' + parsed.year.to + '年の間、' + parsed.year.interval + '年間隔';
       }
     }
     
@@ -1088,7 +1098,9 @@
     }
     
     // 年と頻度の接続
-    yearConnect = (yearPrefix && prefix) ? 'の' : '';
+    // 年の間隔指定（2022/2 や 2022-2030/2）の場合は「の」で接続
+    var yearNeedsConnect = yearPrefix && (parsed.year.type === 'interval' || parsed.year.type === 'rangeWithInterval');
+    yearConnect = (yearPrefix && prefix) ? 'の' : (yearNeedsConnect && parts.length > 0) ? 'の' : '';
     
     result = yearPrefix + yearConnect + prefix + parts.join(' ');
     
