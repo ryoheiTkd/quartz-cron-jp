@@ -464,6 +464,17 @@ test('無効な月名', function() {
   assertFalse(result.success);
 });
 
+test('不正な文字（@+）', function() {
+  var result = QuartzCronJP.translate('@+ 0 09 ? * MON');
+  assertFalse(result.success);
+  assertTrue(result.validationErrors[0].indexOf('不正な文字') !== -1);
+});
+
+test('不正な文字（!）', function() {
+  var result = QuartzCronJP.translate('0! 0 09 ? * MON');
+  assertFalse(result.success);
+});
+
 console.log('');
 console.log('── バリデーション：範囲エラー ────────────────────────────────');
 

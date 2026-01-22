@@ -729,6 +729,13 @@
   function validateFieldSyntax(field, name) {
     if (!field || field === '*' || field === '?') return null;
     
+    // 不正な文字のチェック（許可: 0-9, A-Z, a-z, *, ?, -, /, ,, #, L, W）
+    var invalidChars = field.match(/[^0-9A-Za-z*?\-/,#LW]/g);
+    if (invalidChars) {
+      var uniqueChars = invalidChars.filter(function(v, i, a) { return a.indexOf(v) === i; });
+      return name + 'に不正な文字「' + uniqueChars.join('」「') + '」が含まれています';
+    }
+    
     // 連続カンマ
     if (/,,/.test(field)) {
       return name + 'に連続したカンマがあります';
