@@ -275,14 +275,26 @@
     
     // 分の間隔パターン
     if (minute.isInterval) {
+      // 分の起点を取得
+      var minStart = parsed.minute.start === '*' ? '0' : parsed.minute.start;
+      var minInterval = parsed.minute.interval;
+      // 秒が0でない場合は秒も起点に含める
+      s = parsed.second.value || '0';
+      var minStartText;
+      if (s !== '0' && parsed.second.type === 'single') {
+        minStartText = minStart + '分' + s + '秒起点で' + minInterval + '分間隔';
+      } else {
+        minStartText = minStart + '分起点で' + minInterval + '分間隔';
+      }
+      
       if (hour.isAll) {
-        return '毎時' + minute.text;
+        return '毎時' + minStartText;
       }
       if (parsed.hour.type === 'range') {
-        return parsed.hour.from + '〜' + parsed.hour.to + '時の間、毎時' + minute.text;
+        return parsed.hour.from + '〜' + parsed.hour.to + '時の間、毎時' + minStartText;
       }
       h = parsed.hour.value || '0';
-      return h + '時台に毎時' + minute.text;
+      return h + '時台に毎時' + minStartText;
     }
     
     // 時の間隔パターン
