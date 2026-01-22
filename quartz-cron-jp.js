@@ -586,13 +586,18 @@
         // 時の間隔パターンでも「毎日」を付ける
         prefix = '毎日';
       } else if (translated.hour.isAll) {
+        // 時が*の場合
         prefix = '';
-      } else if (translated.minute.isAll || translated.minute.isInterval) {
-        if (translated.minute.isInterval && (parsed.hour.type === 'range' || parsed.hour.type === 'single')) {
+      } else if (translated.minute.isInterval) {
+        // 分が間隔パターンの場合
+        if (parsed.hour.type === 'range') {
           prefix = '';
-        } else if (!translated.minute.isInterval) {
-          prefix = '毎時';
+        } else {
+          prefix = '毎日';
         }
+      } else if (translated.minute.isAll) {
+        // 分が*で時が具体値の場合 → 毎日
+        prefix = '毎日';
       } else {
         prefix = '毎日';
       }
