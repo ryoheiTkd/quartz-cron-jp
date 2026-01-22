@@ -746,6 +746,224 @@ test('L-3（月末3日前）', function() {
 });
 
 // ============================================================
+// インターバル1の特殊処理
+// ============================================================
+
+console.log('');
+console.log('── インターバル1の特殊処理 ──────────────────────────────────');
+
+test('*/1秒 → 毎秒', function() {
+  var result = QuartzCronJP.translate('*/1 * * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎秒');
+});
+
+test('*/1分 → 毎分', function() {
+  var result = QuartzCronJP.translate('0 */1 * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎分');
+});
+
+test('0/1分 → 毎分', function() {
+  var result = QuartzCronJP.translate('0 0/1 * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎分');
+});
+
+test('*/1時 → 毎時0分', function() {
+  var result = QuartzCronJP.translate('0 0 */1 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日毎時0分');
+});
+
+test('59/1秒（境界値）→ 毎分59秒', function() {
+  var result = QuartzCronJP.translate('59/1 * * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎分59秒');
+});
+
+test('59/1分（境界値）→ 毎時59分', function() {
+  var result = QuartzCronJP.translate('0 59/1 * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎時59分');
+});
+
+test('23/1時（境界値）→ 午後11時', function() {
+  var result = QuartzCronJP.translate('0 0 23/1 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午後11時0分');
+});
+
+// ============================================================
+// 構文バリデーション強化
+// ============================================================
+
+console.log('');
+console.log('── 構文バリデーション強化 ───────────────────────────────────');
+
+test('連続**でエラー', function() {
+  var result = QuartzCronJP.validate('0 0 ** * * ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('連続した「*」') >= 0);
+});
+
+test('連続//でエラー', function() {
+  var result = QuartzCronJP.validate('0 //15 * * * ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('連続した「/」') >= 0);
+});
+
+test('先頭カンマでエラー', function() {
+  var result = QuartzCronJP.validate(',0 0 9 * * ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('先頭に不正なカンマ') >= 0);
+});
+
+test('末尾カンマでエラー', function() {
+  var result = QuartzCronJP.validate('0, 0 9 * * ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('末尾に不正なカンマ') >= 0);
+});
+
+test('連続--でエラー', function() {
+  var result = QuartzCronJP.validate('0 0 9--17 * * ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('連続した「-」') >= 0);
+});
+
+test('先頭/でエラー', function() {
+  var result = QuartzCronJP.validate('/15 0 * * * ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('開始値がありません') >= 0);
+});
+
+test('末尾/でエラー', function() {
+  var result = QuartzCronJP.validate('0 15/ * * * ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('間隔値がありません') >= 0);
+});
+
+// ============================================================
+// カレンダーロジック検証
+// ============================================================
+
+console.log('');
+console.log('── カレンダーロジック検証 ───────────────────────────────────');
+
+test('2月31日でエラー', function() {
+  var result = QuartzCronJP.validate('0 0 9 31 2 ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('2月31日は存在しません') >= 0);
+});
+
+test('2月30日でエラー', function() {
+  var result = QuartzCronJP.validate('0 0 9 30 2 ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('2月30日は存在しません') >= 0);
+});
+
+test('4月31日でエラー', function() {
+  var result = QuartzCronJP.validate('0 0 9 31 4 ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('4月31日は存在しません') >= 0);
+});
+
+test('2月29日はOK（閏年考慮）', function() {
+  var result = QuartzCronJP.validate('0 0 9 29 2 ?');
+  assertTrue(result.isValid);
+});
+
+test('L-31でエラー（オフセット最大30）', function() {
+  var result = QuartzCronJP.validate('0 0 9 L-31 * ?');
+  assertFalse(result.isValid);
+  assertTrue(result.errors[0].indexOf('オフセットが大きすぎます') >= 0);
+});
+
+test('L-30はOK', function() {
+  var result = QuartzCronJP.validate('0 0 9 L-30 * ?');
+  assertTrue(result.isValid);
+});
+
+// ============================================================
+// 小文字対応
+// ============================================================
+
+console.log('');
+console.log('── 小文字対応 ───────────────────────────────────────────────');
+
+test('小文字lw', function() {
+  var result = QuartzCronJP.translate('0 0 9 lw * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月末日に最も近い平日 午前9時');
+});
+
+test('小文字曜日（sun-sat）', function() {
+  var result = QuartzCronJP.translate('0 0 9 ? * sun-sat');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎週月〜日曜日 午前9時');
+});
+
+test('小文字月（jan-dec）', function() {
+  var result = QuartzCronJP.translate('0 0 9 1 jan-dec ?');
+  assertTrue(result.success);
+});
+
+// ============================================================
+// 重複値・リスト処理
+// ============================================================
+
+console.log('');
+console.log('── 重複値・リスト処理 ──────────────────────────────────────');
+
+test('重複値の除去（9,9,9→9）', function() {
+  var result = QuartzCronJP.translate('0 0 9,9,9 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前9時');
+});
+
+test('秒リスト＋時分リスト', function() {
+  var result = QuartzCronJP.translate('10,20 15,45 9,17 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前9・午後5時の15・45分10・20秒');
+});
+
+// ============================================================
+// 月・曜日インターバルの単位
+// ============================================================
+
+console.log('');
+console.log('── 月・曜日インターバルの単位 ──────────────────────────────');
+
+test('月インターバル（1/3）→ ヶ月間隔', function() {
+  var result = QuartzCronJP.translate('0 0 9 1 1/3 ?');
+  assertTrue(result.success);
+  assertTrue(result.description.indexOf('ヶ月間隔') >= 0);
+});
+
+test('曜日インターバル（2/2）→ 日間隔', function() {
+  var result = QuartzCronJP.translate('0 0 9 ? * 2/2');
+  assertTrue(result.success);
+  assertTrue(result.description.indexOf('日間隔') >= 0);
+});
+
+// ============================================================
+// 年フィールドのステップ値
+// ============================================================
+
+console.log('');
+console.log('── 年フィールドのステップ値 ────────────────────────────────');
+
+test('年ステップ（2025/2）', function() {
+  var result = QuartzCronJP.translate('0 0 9 1 1 ? 2025/2');
+  assertTrue(result.success);
+});
+
+test('年範囲＋ステップ（2025-2035/3）', function() {
+  var result = QuartzCronJP.translate('0 0 9 1 1 ? 2025-2035/3');
+  assertTrue(result.success);
+});
+
+// ============================================================
 // 結果
 // ============================================================
 
