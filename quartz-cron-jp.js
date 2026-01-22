@@ -244,6 +244,26 @@
     
     // 秒の間隔パターン
     if (second.isInterval) {
+      // 分も間隔指定の場合（例: 10/3 1/10 2）
+      if (minute.isInterval) {
+        // 時も間隔指定の場合（例: 10/3 1/10 2/2）
+        if (hour.isInterval) {
+          return hour.text + '、' + minute.text + '、' + second.text;
+        }
+        if (!hour.isAll) {
+          h = parsed.hour.value || '0';
+          return h + '時台に' + minute.text + '、' + second.text;
+        }
+        return minute.text + '、' + second.text;
+      }
+      // 時だけ間隔指定の場合（例: 0/5 0 2/2）
+      if (hour.isInterval) {
+        if (!minute.isAll) {
+          m = (parsed.minute.value || '0').toString().padStart(2, '0');
+          return hour.text + '、' + m + '分に' + second.text;
+        }
+        return hour.text + '、' + second.text;
+      }
       if (!hour.isAll && !minute.isAll) {
         h = parsed.hour.value || '0';
         m = (parsed.minute.value || '0').toString().padStart(2, '0');
@@ -397,17 +417,6 @@
     
     result = yearPrefix + yearConnect + prefix + parts.join(' ');
     
-    // 「に実行」を追加
-    skipSuffix = result.slice(-2) === 'ごと' || 
-                 result.slice(-2) === '間隔' || 
-                 result.slice(-2) === '毎秒' || 
-                 result.slice(-2) === '毎分' || 
-                 result.slice(-2) === '毎時';
-    
-    if (result && !skipSuffix) {
-      result += 'に実行';
-    }
-    
     return result || '指定された条件で実行';
   }
 
@@ -480,15 +489,15 @@
     var dayOfWeek = parts[5];
     var year = parts[6];
     
-    // 日と曜日の同時指定チェック
-    var dayIsSpecified = dayOfMonth !== '?' && dayOfMonth !== '*';
-    var weekIsSpecified = dayOfWeek !== '?' && dayOfWeek !== '*';
+    // 日と曜日の同時指定チェック（Quartzでは必ずどちらかが「?」である必要がある）
+    var dayIsQuestion = dayOfMonth === '?';
+    var weekIsQuestion = dayOfWeek === '?';
     
-    if (dayIsSpecified && weekIsSpecified) {
-      errors.push('日と曜日は同時に指定できません。どちらかを「?」にしてください');
+    if (!dayIsQuestion && !weekIsQuestion) {
+      errors.push('日と曜日のどちらかは必ず「?」にしてください');
     }
     
-    if (dayOfMonth === '?' && dayOfWeek === '?') {
+    if (dayIsQuestion && weekIsQuestion) {
       errors.push('日と曜日の両方を「?」にすることはできません');
     }
     
