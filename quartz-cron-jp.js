@@ -172,15 +172,12 @@
           if (fieldType === 'hour') return { text: '毎時', isInterval: true, isEveryHour: true };
         }
         
-        if (startVal !== '0') {
-          return {
-            text: startVal + getFieldUnit(fieldType) + 'から' + intervalVal + unit + '間隔',
-            isInterval: true,
-            startValue: startVal
-          };
-        }
-        
-        return { text: intervalVal + unit + 'ごと', isInterval: true };
+        // 「起点で〜間隔」形式で表示
+        return {
+          text: startVal + getFieldUnit(fieldType) + '起点で' + intervalVal + unit + '間隔',
+          isInterval: true,
+          startValue: startVal
+        };
       
       case 'range':
         if (fieldType === 'dayOfWeek') {
@@ -279,16 +276,13 @@
     // 分の間隔パターン
     if (minute.isInterval) {
       if (hour.isAll) {
-        if (minute.startValue) {
-          return '毎時' + minute.text;
-        }
-        return minute.text;
+        return '毎時' + minute.text;
       }
       if (parsed.hour.type === 'range') {
-        return parsed.hour.from + '〜' + parsed.hour.to + '時の間、' + minute.text;
+        return parsed.hour.from + '〜' + parsed.hour.to + '時の間、毎時' + minute.text;
       }
       h = parsed.hour.value || '0';
-      return h + '時台に' + minute.text;
+      return h + '時台に毎時' + minute.text;
     }
     
     // 時の間隔パターン
@@ -298,7 +292,9 @@
         if (hour.isEveryHour) {
           return '毎時' + m + '分';
         }
-        return hour.text + '、' + m + '分';
+        // 時の起点と分を組み合わせて表現（例: 0時30分起点で2時間間隔）
+        var hourStart = parsed.hour.start === '*' ? '0' : parsed.hour.start;
+        return hourStart + '時' + m + '分起点で' + parsed.hour.interval + '時間間隔';
       }
       return hour.text;
     }
@@ -390,7 +386,10 @@
     // 頻度の接頭辞
     prefix = '';
     if (translated.month.isAll && !hasDayOfMonth && !hasDayOfWeek) {
-      if (translated.hour.isAll || translated.hour.isInterval) {
+      if (translated.hour.isInterval) {
+        // 時の間隔パターンでも「毎日」を付ける
+        prefix = '毎日';
+      } else if (translated.hour.isAll) {
         prefix = '';
       } else if (translated.minute.isAll || translated.minute.isInterval) {
         if (translated.minute.isInterval && (parsed.hour.type === 'range' || parsed.hour.type === 'single')) {
@@ -409,6 +408,16 @@
         if (!isMonthlyPattern) {
           prefix = '毎週';
         }
+      }
+    } else if (hasMonth && !hasDayOfMonth && !hasDayOfWeek) {
+      // 月指定あり、日指定なしの場合は「毎年」を付ける（年指定がない場合のみ）
+      if (!yearPrefix) {
+        prefix = '毎年';
+      }
+    } else if (hasMonth && hasDayOfMonth) {
+      // 月+日指定の場合も「毎年」を付ける（年指定がない場合のみ）
+      if (!yearPrefix) {
+        prefix = '毎年';
       }
     }
     
