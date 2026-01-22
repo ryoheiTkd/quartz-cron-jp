@@ -724,6 +724,44 @@
   }
 
   /**
+   * #記号の単独使用チェック（カンマとの併用不可）
+   */
+  function validateHashAlone(field) {
+    if (!field || field.indexOf('#') === -1) return null;
+    
+    // カンマが含まれている場合はエラー
+    if (field.indexOf(',') !== -1) {
+      return '「#」（第n曜日）はカンマとの併用ができません。単独で指定してください';
+    }
+    
+    // 範囲（-）が含まれている場合もエラー
+    if (field.indexOf('-') !== -1) {
+      return '「#」（第n曜日）は範囲指定との併用ができません。単独で指定してください';
+    }
+    
+    return null;
+  }
+
+  /**
+   * W記号の単独使用チェック（カンマとの併用不可）
+   */
+  function validateWeekdayAlone(field) {
+    if (!field || field.indexOf('W') === -1) return null;
+    
+    // カンマが含まれている場合はエラー
+    if (field.indexOf(',') !== -1) {
+      return '「W」（最寄り平日）はカンマとの併用ができません。単独で指定してください';
+    }
+    
+    // 範囲（-）が含まれている場合もエラー
+    if (field.indexOf('-') !== -1) {
+      return '「W」（最寄り平日）は範囲指定との併用ができません。単独で指定してください';
+    }
+    
+    return null;
+  }
+
+  /**
    * フィールドの構文チェック（連続カンマ、不完全な範囲など）
    */
   function validateFieldSyntax(field, name) {
@@ -915,6 +953,16 @@
     if (dayOfWeek !== '?' && dayOfWeek !== '*' && dayOfWeek.indexOf('#') !== -1) {
       var nthError = validateNthWeekday(dayOfWeek);
       if (nthError) errors.push(nthError);
+      
+      // #の単独使用チェック
+      var hashAloneError = validateHashAlone(dayOfWeek);
+      if (hashAloneError) errors.push(hashAloneError);
+    }
+    
+    // W記号のバリデーション（日フィールド）
+    if (dayOfMonth !== '?' && dayOfMonth !== '*' && dayOfMonth.indexOf('W') !== -1) {
+      var weekdayAloneError = validateWeekdayAlone(dayOfMonth);
+      if (weekdayAloneError) errors.push(weekdayAloneError);
     }
     
     // 曜日名チェック

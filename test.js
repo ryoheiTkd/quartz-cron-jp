@@ -556,6 +556,18 @@ test('#の週番号が範囲外（0）', function() {
   assertFalse(result.success);
 });
 
+test('#とカンマの併用でエラー', function() {
+  var result = QuartzCronJP.translate('0 0 9 ? * 1#1,2,3');
+  assertFalse(result.success);
+  assertTrue(result.validationErrors[0].indexOf('カンマとの併用') !== -1);
+});
+
+test('Wとカンマの併用でエラー', function() {
+  var result = QuartzCronJP.translate('0 0 9 23W,12W * ?');
+  assertFalse(result.success);
+  assertTrue(result.validationErrors[0].indexOf('カンマとの併用') !== -1);
+});
+
 test('validate関数：正常', function() {
   var result = QuartzCronJP.validate('0 0 12 * * ?');
   assertTrue(result.isValid);
