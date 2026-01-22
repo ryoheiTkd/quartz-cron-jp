@@ -282,6 +282,10 @@
     var hour = translated.hour;
     var h, m, s, hours;
     
+    // 秒の値を取得（0かどうかの判定用）
+    var secVal = parseInt(parsed.second.value || '0', 10);
+    var minVal = parseInt(parsed.minute.value || '0', 10);
+    
     // 秒の間隔パターン
     if (second.isInterval) {
       // 分も間隔指定の場合（例: 10/3 1/10 2）
@@ -299,19 +303,19 @@
       // 時だけ間隔指定の場合（例: 0/5 0 2/2）
       if (hour.isInterval) {
         if (!minute.isAll) {
-          m = (parsed.minute.value || '0').toString().padStart(2, '0');
+          m = minVal;
           return hour.text + '、' + m + '分に' + second.text;
         }
         return hour.text + '、' + second.text;
       }
       if (!hour.isAll && !minute.isAll) {
         h = parsed.hour.value || '0';
-        m = (parsed.minute.value || '0').toString().padStart(2, '0');
+        m = minVal;
         return formatTime12(h, m) + 'に' + second.text;
       }
       if (!hour.isAll && minute.isAll) {
         h = parsed.hour.value || '0';
-        return formatHour12(h) + '台に' + second.text;
+        return formatHour12(h) + '台に毎分' + second.text;
       }
       return second.text;
     }
@@ -322,11 +326,11 @@
       var minStart = parsed.minute.start === '*' ? '0' : parsed.minute.start;
       var minInterval = parsed.minute.interval;
       // 秒が0でない場合は秒も起点に含める
-      s = parsed.second.value || '0';
+      s = secVal;
       
       if (hour.isAll) {
         // 毎時の場合
-        if (s !== '0' && parsed.second.type === 'single') {
+        if (s !== 0 && parsed.second.type === 'single') {
           return '毎時' + minStart + '分' + s + '秒起点で' + minInterval + '分間隔';
         }
         return '毎時' + minStart + '分起点で' + minInterval + '分間隔';
@@ -335,14 +339,14 @@
         // 時間範囲の場合（例: 9-17時の間）
         var fromH = formatHour12(parsed.hour.from);
         var toH = formatHour12(parsed.hour.to);
-        if (s !== '0' && parsed.second.type === 'single') {
+        if (s !== 0 && parsed.second.type === 'single') {
           return fromH + '〜' + toH + 'の間、毎時' + minStart + '分' + s + '秒起点で' + minInterval + '分間隔';
         }
         return fromH + '〜' + toH + 'の間、毎時' + minStart + '分起点で' + minInterval + '分間隔';
       }
       // 時が単一値の場合（例: 3時）→ 時分を組み合わせた起点表現
       h = parsed.hour.value || '0';
-      if (s !== '0' && parsed.second.type === 'single') {
+      if (s !== 0 && parsed.second.type === 'single') {
         return formatTimeWithSec12(h, minStart, s) + '起点で' + minInterval + '分間隔';
       }
       return formatTime12(h, minStart) + '起点で' + minInterval + '分間隔';
@@ -351,8 +355,12 @@
     // 時の間隔パターン
     if (hour.isInterval) {
       if (!minute.isAll) {
-        m = (parsed.minute.value || '0').toString().padStart(2, '0');
+        m = minVal;
         if (hour.isEveryHour) {
+          // 毎時パターン：秒があれば表示
+          if (secVal !== 0 && parsed.second.type === 'single') {
+            return '毎時' + m + '分' + secVal + '秒';
+          }
           return '毎時' + m + '分';
         }
         // 時の起点と分を組み合わせて表現（例: 午前0時30分起点で2時間間隔）
@@ -362,21 +370,43 @@
       return hour.text;
     }
     
-    // 通常の時刻
+    // 毎分パターン（時・分ともに*）
     if (hour.isAll && minute.isAll) {
-      if (!second.isAll && second.text) {
-        return '毎分' + second.text;
+      if (second.isAll) {
+        return '毎秒';
+      }
+      if (secVal !== 0 && parsed.second.type === 'single') {
+        return '毎分' + secVal + '秒';
       }
       return '毎分';
     }
     
-    if (hour.isAll) {
-      return '毎時' + (parsed.minute.value || '0') + '分';
+    // 毎時パターン（時が*、分が具体値）
+    if (hour.isAll && !minute.isAll) {
+      if (second.isAll) {
+        return '毎時' + minVal + '分に毎秒';
+      }
+      if (secVal !== 0 && parsed.second.type === 'single') {
+        return '毎時' + minVal + '分' + secVal + '秒';
+      }
+      return '毎時' + minVal + '分';
+    }
+    
+    // 毎分パターン（時が具体値、分が*）
+    if (!hour.isAll && minute.isAll) {
+      h = parsed.hour.value || '0';
+      if (second.isAll) {
+        return formatHour12(h) + '台に毎秒';
+      }
+      if (secVal !== 0 && parsed.second.type === 'single') {
+        return formatHour12(h) + '台に毎分' + secVal + '秒';
+      }
+      return formatHour12(h) + '台に毎分';
     }
     
     // 具体的な時刻
-    m = (parsed.minute.value || '0').toString().padStart(2, '0');
-    s = parsed.second.value || '0';
+    m = minVal;
+    s = secVal;
     
     // 時間がリストの場合
     if (parsed.hour.type === 'list') {
@@ -386,19 +416,51 @@
         }
         return formatHour12(item.value).replace('時', '');
       }).join('・') + '時';
+      // 秒があれば表示、0分なら省略
+      if (second.isAll) {
+        return hours + (m === 0 ? '' : m + '分') + 'に毎秒';
+      }
+      if (s !== 0 && parsed.second.type === 'single') {
+        return hours + m + '分' + s + '秒';
+      }
+      if (m === 0) {
+        return hours;
+      }
       return hours + m + '分';
     }
     
+    // 時間範囲の場合
     if (parsed.hour.type === 'range') {
       var rangeFrom = formatHour12(parsed.hour.from);
       var rangeTo = formatHour12(parsed.hour.to);
+      if (second.isAll) {
+        return rangeFrom + '〜' + rangeTo + 'の間、毎時' + m + '分に毎秒';
+      }
+      if (s !== 0 && parsed.second.type === 'single') {
+        return rangeFrom + '〜' + rangeTo + 'の間、毎時' + m + '分' + s + '秒';
+      }
       return rangeFrom + '〜' + rangeTo + 'の間、毎時' + m + '分';
     }
     
+    // 単一時刻
     h = parsed.hour.value || parsed.hour.from || '0';
     
-    if (s !== '0' && parsed.second.type === 'single') {
+    // 秒が*（毎秒）の場合
+    if (second.isAll) {
+      if (m === 0) {
+        return formatHour12(h) + 'に毎秒';
+      }
+      return formatTime12(h, m) + 'に毎秒';
+    }
+    
+    // 秒が具体値で0以外
+    if (s !== 0 && parsed.second.type === 'single') {
       return formatTimeWithSec12(h, m, s);
+    }
+    
+    // 通常時刻：0分なら省略
+    if (m === 0) {
+      return formatHour12(h);
     }
     
     return formatTime12(h, m);
