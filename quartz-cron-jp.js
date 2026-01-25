@@ -757,6 +757,10 @@
         m = parseInt(parsed.minute.value || '0', 10);
         return formatTime12(h, m) + 'の' + secFrom + '〜' + secTo + '秒の間、' + secInterval + '秒間隔';
       }
+      // 分がインターバルの場合
+      if (minute.isInterval) {
+        return minute.text + '、各分の' + secFrom + '〜' + secTo + '秒の間、' + secInterval + '秒間隔';
+      }
       return secFrom + '〜' + secTo + '秒の間、' + secInterval + '秒間隔';
     }
     
@@ -768,6 +772,10 @@
         h = parsed.hour.value || '0';
         m = parseInt(parsed.minute.value || '0', 10);
         return formatTime12(h, m) + 'の' + secFrom + '〜' + secTo + '秒';
+      }
+      // 分がインターバルの場合
+      if (minute.isInterval) {
+        return minute.text + '、各分の' + secFrom + '〜' + secTo + '秒';
       }
       return secFrom + '〜' + secTo + '秒';
     }
@@ -912,6 +920,13 @@
       if (hour.isInterval) {
         var hourStart = parsed.hour.start === '*' ? '0' : parsed.hour.start;
         var hourInterval = parsed.hour.interval;
+        // 秒リストの場合
+        if (parsed.second.type === 'list') {
+          var secListText = parsed.second.items.map(function(item) {
+            return item.value;
+          }).join('・') + '秒';
+          return formatHour12(hourStart) + '起点で' + hourInterval + '時間間隔、各時の' + minStart + '分起点で' + minInterval + '分間隔、各分の' + secListText;
+        }
         if (s !== 0 && parsed.second.type === 'single') {
           return formatHour12(hourStart) + '起点で' + hourInterval + '時間間隔、各時の' + minStart + '分起点で' + minInterval + '分間隔、各分の' + s + '秒';
         }
@@ -928,6 +943,13 @@
       
       if (hour.isAll) {
         // 毎時の場合
+        // 秒リストの場合
+        if (parsed.second.type === 'list') {
+          var secListText = parsed.second.items.map(function(item) {
+            return item.value;
+          }).join('・') + '秒';
+          return '毎時' + minStart + '分起点で' + minInterval + '分間隔、各分の' + secListText;
+        }
         if (s !== 0 && parsed.second.type === 'single') {
           return '毎時' + minStart + '分' + s + '秒起点で' + minInterval + '分間隔';
         }
@@ -1010,9 +1032,9 @@
           return item.value;
         }).join('・') + '分';
         if (secVal !== 0 && parsed.second.type === 'single') {
-          return formatTime12(hourStart, 0) + '起点で' + parsed.hour.interval + '時間間隔の' + minText + secVal + '秒';
+          return formatHour12(hourStart) + '起点で' + parsed.hour.interval + '時間間隔、各時の' + minText + secVal + '秒';
         }
-        return formatTime12(hourStart, 0) + '起点で' + parsed.hour.interval + '時間間隔の' + minText;
+        return formatHour12(hourStart) + '起点で' + parsed.hour.interval + '時間間隔、各時の' + minText;
       }
       
       if (!minute.isAll) {

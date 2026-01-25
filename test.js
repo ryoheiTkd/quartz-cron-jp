@@ -1363,6 +1363,58 @@ test('月境界: 1-12（全月）', function() {
 });
 
 // ============================================================
+// 秒・分範囲＋インターバル複合パターン
+// ============================================================
+
+test('秒範囲＋分インターバル', function() {
+  var result = QuartzCronJP.translate('50-10 0/15 * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '0分起点で15分間隔、各分の50〜10秒');
+});
+
+test('秒範囲インターバル＋分インターバル', function() {
+  var result = QuartzCronJP.translate('45-15/5 0/30 * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '0分起点で30分間隔、各分の45〜15秒の間、5秒間隔');
+});
+
+test('複合跨ぎ: 時間と日（両方跨ぎ）', function() {
+  var result = QuartzCronJP.translate('0 0 22-5 25-5 * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎月25〜5日 午後10時〜午前5時');
+});
+
+test('時間跨ぎ＋曜日跨ぎ＋分インターバル', function() {
+  var result = QuartzCronJP.translate('0 0/30 22-6 ? * FRI-MON');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎週金〜月曜日 午後10時〜午前6時の間、毎時0分起点で30分間隔');
+});
+
+test('月跨ぎ＋日跨ぎ＋時間跨ぎ', function() {
+  var result = QuartzCronJP.translate('0 0 23-3 28-5 11-2 ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎年11月〜2月28〜5日 午後11時〜午前3時');
+});
+
+test('秒リスト＋分インターバル', function() {
+  var result = QuartzCronJP.translate('0,15,30,45 0/10 * * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎時0分起点で10分間隔、各分の0・15・30・45秒');
+});
+
+test('分リスト＋時インターバル', function() {
+  var result = QuartzCronJP.translate('0 0,30 0/3 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前0時起点で3時間間隔、各時の0・30分');
+});
+
+test('時間跨ぎ範囲＋分30', function() {
+  var result = QuartzCronJP.translate('0 30 22-6 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午後10時〜午前6時の間、毎時30分');
+});
+
+// ============================================================
 // 結果
 // ============================================================
 
