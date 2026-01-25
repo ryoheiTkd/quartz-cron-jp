@@ -1228,8 +1228,8 @@
       }
     } else if (hasMonth) {
       if (hasDayOfWeek) {
-        // 月と曜日を連結（スペースなし）
-        parts.push(translated.month.text + translated.dayOfWeek.text);
+        // 月と曜日を連結（「の」で区切る）
+        parts.push(translated.month.text + 'の' + translated.dayOfWeek.text);
       } else {
         parts.push(translated.month.text);
       }

@@ -440,7 +440,7 @@ test('毎秒＋時刻', function() {
 test('月指定＋曜日', function() {
   var result = QuartzCronJP.translate('0 0 9 ? 1 MON');
   assertTrue(result.success);
-  assertEquals(result.description, '毎年1月月曜日 午前9時');
+  assertEquals(result.description, '毎年1月の月曜日 午前9時');
 });
 
 test('年範囲', function() {
@@ -742,7 +742,7 @@ test('第4金曜日（6#4）', function() {
 test('四半期月の第1月曜', function() {
   var result = QuartzCronJP.translate('0 0 0 ? 1,4,7,10 MON#1');
   assertTrue(result.success);
-  assertEquals(result.description, '毎年1月・4月・7月・10月第1月曜日 午前0時');
+  assertEquals(result.description, '毎年1月・4月・7月・10月の第1月曜日 午前0時');
 });
 
 test('LW（月末最寄り平日）', function() {
@@ -1114,7 +1114,7 @@ test('月末＋時間範囲インターバル＋分インターバル', function
 test('月インターバル＋第1月曜＋時間インターバル', function() {
   var result = QuartzCronJP.translate('0 0 2/3 ? 1/3 MON#1');
   assertTrue(result.success);
-  assertEquals(result.description, '毎年1月起点で3ヶ月間隔第1月曜日 午前2時起点で3時間間隔');
+  assertEquals(result.description, '毎年1月起点で3ヶ月間隔の第1月曜日 午前2時起点で3時間間隔');
 });
 
 test('月インターバル＋月末＋時間インターバル', function() {
@@ -1278,7 +1278,7 @@ test('複合跨ぎ: 時間と月', function() {
 test('複合跨ぎ: 月と曜日', function() {
   var result = QuartzCronJP.translate('0 0 9 ? 12-2 SAT-TUE');
   assertTrue(result.success);
-  assertEquals(result.description, '毎年12月〜2月土〜火曜日 午前9時');
+  assertEquals(result.description, '毎年12月〜2月の土〜火曜日 午前9時');
 });
 
 test('複合跨ぎ: 日と月', function() {
