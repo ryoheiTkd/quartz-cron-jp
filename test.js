@@ -655,6 +655,18 @@ test('時間範囲＋間隔（9-17/2）', function() {
   assertEquals(result.description, '毎日午前9時〜午後5時の間、2時間間隔');
 });
 
+test('時間リスト＋範囲混在', function() {
+  var result = QuartzCronJP.translate('0 0 22,23,0-5 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午後10・午後11・午前0〜午前5時');
+});
+
+test('時間範囲複数', function() {
+  var result = QuartzCronJP.translate('0 0 9-11,14-16 * * ?');
+  assertTrue(result.success);
+  assertEquals(result.description, '毎日午前9〜午前11・午後2〜午後4時');
+});
+
 test('曜日範囲＋間隔（2-6/2）', function() {
   var result = QuartzCronJP.translate('0 0 9 ? * 2-6/2');
   assertTrue(result.success);

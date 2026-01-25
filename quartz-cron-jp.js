@@ -931,7 +931,8 @@
     if (parsed.hour.type === 'list') {
       hours = parsed.hour.items.map(function(item) {
         if (item.type === 'range') {
-          return formatHour12(item.from) + '〜' + formatHour12(item.to);
+          // 範囲の場合も「時」を除去（最後に「時」を付けるので）
+          return formatHour12(item.from).replace('時', '') + '〜' + formatHour12(item.to).replace('時', '');
         }
         return formatHour12(item.value).replace('時', '');
       }).join('・') + '時';
